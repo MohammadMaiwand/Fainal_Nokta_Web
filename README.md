@@ -1,101 +1,189 @@
 # Nokta Academy Management System
 
-Nokta Academy is a full-stack educational management system for schools and academies. It includes role-based dashboards, authentication, student and teacher management, classes, attendance, exams, results, books, finance, reports, multilingual UI, theme support, and offline-first frontend caching.
+Full-stack school/academy platform: **Node.js API**, **React web app**, **Vite PWA**, and **Flutter mobile** client. Role-based access, multilingual UI (en / fa / ps), finance, attendance, messaging, and offline-friendly frontends.
 
-## Project Structure
+---
 
-- `backend/` - Node.js, Express, TypeScript, MongoDB/Mongoose API.
-- `frontend/` - React 18, Vite, TypeScript, Tailwind CSS web app with PWA support.
-- `Nokta_App/frontend_mobile/` - Separate mobile frontend copy.
-- `account/` - Local account notes and sample credentials.
-- `SYSTEM_WORK_LOG.md` - Phase-by-phase engineering work log.
+## Repository layout
 
-## Technology Stack
+| Path | Description |
+|------|-------------|
+| [`backend/`](backend/) | Express + TypeScript + MongoDB API |
+| [`frontend/`](frontend/) | React 18 + Vite + Tailwind web application |
+| [`Nokta_App/frontend_mobile/`](Nokta_App/frontend_mobile/) | Mobile-oriented Vite PWA (unchanged contract with API) |
+| [`Nokta_App/frontend_mobile/flutter/`](Nokta_App/frontend_mobile/flutter/) | **Flutter** native mobile app |
+| [`scripts/`](scripts/) | Backup and utility scripts |
+| [`.github/`](.github/) | CI workflows |
+| [`deploy/`](deploy/) | Production nginx configuration |
 
-- Frontend: React, Vite, TypeScript, Tailwind CSS, Zustand, React Query, React Router, i18next, Recharts, vite-plugin-pwa.
-- Backend: Express, TypeScript, Mongoose, JWT authentication, bcrypt password hashing, Joi validation, Helmet, CORS, rate limiting.
-- Database: MongoDB, default local URI `mongodb://localhost:27017/nokta_academy`.
-- Build system: npm scripts for each app.
+---
 
 ## Prerequisites
 
-- Node.js 18 or newer.
-- npm.
-- MongoDB running locally on port `27017`.
-- Windows PowerShell users: run commands with `npm.cmd` if `npm` is blocked by execution policy.
+- **Node.js** 18+
+- **npm** (use `npm.cmd` on Windows if execution policy blocks `npm`)
+- **MongoDB** (default `mongodb://localhost:27017/nokta_academy`)
+- **Flutter** 3.11+ (mobile only)
 
-## Backend Setup
+---
+
+## Offline Windows start
+
+After dependencies have been installed once, the web system can run without internet.
+
+```bat
+Start-Nokta-Academy-Windows.bat
+```
+
+The launcher checks Node.js, local `node_modules`, MongoDB, backend build, frontend build, and then starts:
+
+- App: `http://127.0.0.1:4173`
+- API: `http://127.0.0.1:8081/api`
+- Health: `http://127.0.0.1:8081/health`
+
+Logs are written to `.offline-runtime/`. If dependencies are missing, connect internet once and run:
+
+```bash
+npm ci
+npm ci --prefix backend
+npm ci --prefix frontend
+```
+
+Then run `Start-Nokta-Academy-Windows.bat` again.
+
+---
+
+## Backend setup
 
 ```bash
 cd backend
-npm.cmd install
-copy .env.example .env
-npm.cmd run seed
-npm.cmd run dev
+npm install
+copy .env.example .env    # Windows
+# edit .env — never commit .env
+npm run seed              # optional dev data
+npm run dev
 ```
 
-The backend runs on `http://localhost:8081` by default. Health check:
+- API: `http://localhost:8081/api`
+- Health: `http://localhost:8081/health`
+
+### Backend commands
 
 ```bash
-curl http://localhost:8081/health
+npm run lint
+npm run build
+npm run test
+npm run validate-api
 ```
 
-## Frontend Setup
+### Backend environment (`.env`)
+
+See [`backend/.env.example`](backend/.env.example). Key variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `MONGO_URI` | MongoDB connection |
+| `JWT_SECRET` | Access token signing (≥ 32 chars in production) |
+| `REFRESH_SECRET` | Refresh tokens |
+| `PORT` | Default `8081` |
+
+---
+
+## Web frontend setup
 
 ```bash
 cd frontend
-npm.cmd install
-npm.cmd run dev
+npm install
+npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and proxies `/api` to `http://127.0.0.1:8081`.
+- App: `http://localhost:5173`
+- Proxies `/api` → `http://127.0.0.1:8081`
 
-## Production Build
+### Frontend commands
 
 ```bash
-cd backend
-npm.cmd run build
-
-cd ..\frontend
-npm.cmd run build
+npm run typecheck
+npm run test
+npm run build
+npm run validate-permissions
+npm run preview
 ```
 
-To preview the built frontend:
+### Frontend environment
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | API base (optional; dev proxy default) |
+
+---
+
+## Flutter mobile setup
 
 ```bash
-cd frontend
-npm.cmd run preview
+cd Nokta_App/frontend_mobile/flutter
+flutter pub get
+flutter gen-l10n
+flutter run --dart-define=API_BASE_URL=http://localhost:8081/api --dart-define=APP_ENV=development
 ```
 
-## Offline Notes
+| Target | `API_BASE_URL` |
+|--------|----------------|
+| Desktop / iOS simulator | `http://localhost:8081/api` |
+| Android emulator | `http://10.0.2.2:8081/api` |
+| Physical phone (LAN) | `http://192.168.x.x:8081/api` |
+| Production | `https://your-domain.com/api` + `APP_ENV=production` |
 
-- Dependencies are installed locally in `node_modules`, so builds and local dev can run without downloading packages once installed.
-- The frontend includes PWA service worker generation with cache rules for pages, scripts, styles, images, and GET API responses.
-- Home page hero images and app icons are served from `frontend/public`, not from a CDN.
-- The web app stores successful GET API responses in a small local offline cache and reuses them when the API is unavailable.
-- The home and registration pages include bundled fallback academic data so they still render before the backend is available.
-- MongoDB must be available locally for the backend API to start.
+### Flutter commands
 
-## Main Local URLs
+```bash
+flutter analyze
+flutter test
+```
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8081/api`
-- Backend health: `http://localhost:8081/health`
+Release builds (local machine, HTTPS required for production):
 
-## Sample Accounts
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://your-domain.com/api --dart-define=APP_ENV=production
+```
 
-See `account/accounts.md` for local sample credentials. Common seeded accounts include:
+### Flutter compile-time defines
 
-- Super Admin: `admin@gmail.com` / `12345678`
-- Admin: `admin1@nokta.com` / `Admin123!`
-- Teacher: `teacher1@nokta.com` / `Teacher123!`
-- Student: `student1@nokta.com` / `Student123!`
-- Parent/Family: `family1@nokta.com` / `Family123!`
+| Define | Example |
+|--------|---------|
+| `API_BASE_URL` | Must end with `/api` |
+| `APP_ENV` | `development` \| `staging` \| `production` |
+
+---
+
+## PWA (`Nokta_App/frontend_mobile/`)
+
+```bash
+cd Nokta_App/frontend_mobile
+npm install
+npm run build
+```
+
+Uses the same backend API as web; not modified when changing Flutter-only code.
+
+---
+
+## What NOT to commit
+
+- `.env`, `.env.local`, real secrets
+- `node_modules/`, `dist/`, `build/`, `.dart_tool/`
+- `android/key.properties`, `*.jks`, `*.keystore`
+- Browser profiles (`chrome-profile*`, cookies, login data)
+- `backups/` with real database dumps
+- APK/AAB binaries (optional: store in CI artifacts)
+
+See [`.gitignore`](.gitignore).
+
+---
 
 ## Troubleshooting
 
-- If `npm` fails in PowerShell with an execution policy error, use `npm.cmd`.
-- If the backend does not start, confirm MongoDB is running and `MONGO_URI` in `backend/.env` is correct.
-- If login fails after reseeding, clear browser local storage and try the seeded credentials again.
-- If the frontend cannot reach the API, confirm the backend is on port `8081` or set `VITE_API_URL`.
-# Nokta_V8
+- PowerShell blocks `npm` → use `npm.cmd`
+- Backend won’t start → check MongoDB and `MONGO_URI`
+- Flutter production build fails at startup → use **HTTPS** `API_BASE_URL` with `APP_ENV=production`
+- PWA stale cache → unregister service worker in DevTools once

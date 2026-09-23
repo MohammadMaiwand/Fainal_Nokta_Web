@@ -22,6 +22,9 @@ export function branchMiddleware(req: Request, res: Response, next: NextFunction
   const requestBranchId = (req.body?.branchId || req.query?.branchId || null)?.toString?.() ?? null;
 
   if (!userBranchId && !requestBranchId) {
+    if (req.user.canonicalRole === 'branch_manager') {
+      return res.status(403).json(createError('Branch access denied'));
+    }
     return next();
   }
 

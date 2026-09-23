@@ -1,20 +1,16 @@
 import { Router } from 'express';
 import Joi from 'joi';
-import mongoose from 'mongoose';
-import { Branch } from '../../models/Branch';
+import { authenticate, authorize } from '../../middlewares/auth';
+import { validate } from '../../middlewares/validate';
+import { createError, createResponse } from '../../helpers/response';
 import { Expense } from '../../models/Expense';
 import { FinanceEntry } from '../../models/FinanceEntry';
 import { Payment } from '../../models/Payment';
-import { Salary } from '../../models/Salary';
-import { SalaryTransaction } from '../../models/SalaryTransaction';
-import { Student } from '../../models/Student';
-import { User } from '../../models/User';
-import { authenticate, authorize } from '../../middlewares/auth';
-import { validate } from '../../middlewares/validate';
-import { createResponse } from '../../helpers/response';
 import { paginationSchema } from '../../validators/pagination';
+import { FinanceAggregationService } from '../../services/financeAggregationService';
 
 const router = Router();
+const financeAggregationService = new FinanceAggregationService();
 
 const financeSchema = Joi.object({
   body: Joi.object({
@@ -27,224 +23,57 @@ const financeSchema = Joi.object({
   })
 });
 
-function buildMonths(start: Date, count: number) {
-  return Array.from({ length: count }, (_, index) => {
-    const date = new Date(start.getFullYear(), start.getMonth() + index, 1);
-    return { year: date.getFullYear(), month: date.getMonth() + 1 };
-  });
+function readFinanceFilters(query: any) {
+  return {
+    startDate: query.startDate ? String(query.startDate) : undefined,
+    endDate: query.endDate ? String(query.endDate) : undefined,
+    branchId: query.branchId ? String(query.branchId) : undefined,
+    teacherId: query.teacherId ? String(query.teacherId) : undefined,
+    classId: query.classId ? String(query.classId) : undefined,
+    subjectId: query.subjectId ? String(query.subjectId) : undefined,
+    status: query.status ? String(query.status) as 'paid' | 'unpaid' | 'pending' : undefined
+  };
 }
+
+router.get('/me/earnings', authenticate, authorize(['teacher']), async (req, res, next) => {
+  try {
+    const detail = await financeAggregationService.getTeacherSelfEarnings(req.user!.userId, readFinanceFilters(req.query));
+    res.json(createResponse(detail));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.use(authenticate, authorize(['super_admin', 'admin', 'accountant', 'branch_manager', 'owner']));
 
-function buildDateFilter(query: any, field: string) {
-  const range: Record<string, Date> = {};
-  if (query.startDate) range.$gte = new Date(String(query.startDate));
-  if (query.endDate) {
-    const end = new Date(String(query.endDate));
-    end.setHours(23, 59, 59, 999);
-    range.$lte = end;
-  }
-  return Object.keys(range).length ? { [field]: range } : {};
-}
-
-function buildBranchFilter(req: any) {
-  const requestedBranchId = req.query.branchId ? String(req.query.branchId) : '';
-  const scopedBranchId = req.user?.canonicalRole === 'branch_manager' ? req.user?.branchId : requestedBranchId;
-  if (!scopedBranchId || !mongoose.Types.ObjectId.isValid(scopedBranchId)) {
-    return {};
-  }
-  return { branchId: new mongoose.Types.ObjectId(scopedBranchId) };
-}
-
 router.get('/summary', async (req, res, next) => {
   try {
-    const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
-    const paymentDateFilter = buildDateFilter(req.query, 'paymentDate');
-    const entryDateFilter = buildDateFilter(req.query, 'date');
-    const expenseDateFilter = buildDateFilter(req.query, 'date');
-    const salaryDateFilter = buildDateFilter(req.query, 'createdAt');
-    const branchFilter = buildBranchFilter(req);
-
-    const [paymentsTotal, manualIncomeTotal, expenseTotals, pendingPayments, paidInvoices, salaryPayments, salaryTransactionTotals, fixedTeacherTotals, monthlyPayments, monthlyManualIncome, monthlyExpensesRaw, monthlySalaryTransactionsRaw, monthlyPendingBalancesRaw, salaryTrendRaw, branches] = await Promise.all([
-      Payment.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, ...paymentDateFilter } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
-      ]),
-      FinanceEntry.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, ...entryDateFilter } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
-      ]),
-      Expense.aggregate([
-        { $match: { isDeleted: false, category: { $ne: 'income' }, ...branchFilter, ...expenseDateFilter } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
-      ]),
-      Student.aggregate([
-        { $match: { isDeleted: false, remainingBalance: { $gt: 0 }, ...branchFilter } },
-        { $group: { _id: null, total: { $sum: '$remainingBalance' } } }
-      ]),
-      Payment.countDocuments({ isDeleted: false, ...branchFilter }),
-      Salary.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, ...salaryDateFilter } },
-        { $group: { _id: null, total: { $sum: '$netAmount' } } }
-      ]),
-      SalaryTransaction.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, ...buildDateFilter(req.query, 'createdAt') } },
-        { $group: { _id: null, total: { $sum: '$earnedAmount' } } }
-      ]),
-      User.aggregate([
-        { $match: { role: 'teacher', isDeleted: false, active: true, salaryType: 'fixed', ...branchFilter } },
-        { $group: { _id: null, total: { $sum: '$fixedSalary' } } }
-      ]),
-      Payment.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, paymentDate: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$paymentDate' },
-              month: { $month: '$paymentDate' }
-            },
-            total: { $sum: '$amount' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      FinanceEntry.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, date: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$date' },
-              month: { $month: '$date' }
-            },
-            total: { $sum: '$amount' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      Expense.aggregate([
-        { $match: { isDeleted: false, category: { $ne: 'income' }, ...branchFilter, date: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$date' },
-              month: { $month: '$date' }
-            },
-            total: { $sum: '$amount' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      SalaryTransaction.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, createdAt: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' },
-              month: { $month: '$createdAt' }
-            },
-            total: { $sum: '$earnedAmount' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      Student.aggregate([
-        { $match: { isDeleted: false, remainingBalance: { $gt: 0 }, ...branchFilter, createdAt: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' },
-              month: { $month: '$createdAt' }
-            },
-            total: { $sum: '$remainingBalance' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      Salary.aggregate([
-        { $match: { isDeleted: false, ...branchFilter, createdAt: { $gte: startDate } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' },
-              month: { $month: '$createdAt' }
-            },
-            total: { $sum: '$netAmount' }
-          }
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } }
-      ]),
-      Branch.find({ isDeleted: false, ...(branchFilter.branchId ? { _id: branchFilter.branchId } : {}) }).select('name').lean()
-    ]);
-
-    const months = buildMonths(startDate, 6);
-    const monthlyRevenue = months.map((month) => ({
-      year: month.year,
-      month: month.month,
-      revenue:
-        (monthlyPayments.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0) +
-        (monthlyManualIncome.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0)
-    }));
-    const monthlyPendingBalances = months.map((month) => ({
-      year: month.year,
-      month: month.month,
-      total: monthlyPendingBalancesRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0
-    }));
-    const salaryPayoutTrend = months.map((month) => ({
-      year: month.year,
-      month: month.month,
-      total:
-        (salaryTrendRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0) +
-        (monthlySalaryTransactionsRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0)
-    }));
-    const monthlyExpenses = months.map((month) => ({
-      year: month.year,
-      month: month.month,
-      total:
-        (monthlyExpensesRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0) +
-        (salaryTrendRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0) +
-        (monthlySalaryTransactionsRaw.find((entry: any) => entry._id.year === month.year && entry._id.month === month.month)?.total ?? 0)
-    }));
-
-    const paymentsByBranch = await Payment.aggregate([
-      { $match: { isDeleted: false, branchId: { $ne: null }, ...branchFilter } },
-      { $group: { _id: '$branchId', total: { $sum: '$amount' } } }
-    ]);
-
-    const branchIncome = branches.map((branch: any) => ({
-      branch: branch.name,
-      total: paymentsByBranch.find((entry: any) => String(entry._id) === String(branch._id))?.total ?? 0
-    }));
-
-    const studentPayments = paymentsTotal[0]?.total ?? 0;
-    const manualIncome = manualIncomeTotal[0]?.total ?? 0;
-    const totalIncome = studentPayments + manualIncome;
-    const totalExpenses = expenseTotals[0]?.total ?? 0;
-    const salaryRecords = salaryPayments[0]?.total ?? 0;
-    const percentageTeacherSalaries = salaryTransactionTotals[0]?.total ?? 0;
-    const fixedTeacherSalaries = fixedTeacherTotals[0]?.total ?? 0;
-    const teacherSalaryPayments = salaryRecords + percentageTeacherSalaries + fixedTeacherSalaries;
-    const netProfit = totalIncome - totalExpenses - teacherSalaryPayments;
-
-    res.json(createResponse({
-      totalIncome,
-      studentPayments: paymentsTotal[0]?.total ?? 0,
-      totalExpenses,
-      teacherSalaryPayments,
-      fixedTeacherSalaries,
-      percentageTeacherSalaries,
-      netProfit,
-      monthlyRevenue,
-      monthlyExpenses,
-      monthlyPendingBalances,
-      pendingPayments: pendingPayments[0]?.total ?? 0,
-      paidInvoices,
-      branchIncome,
-      salaryPayoutTrend,
-      manualIncome
-    }));
+    const scopedBranchId = req.user?.canonicalRole === 'branch_manager' ? req.user.branchId : undefined;
+    const summary = await financeAggregationService.getSummary(readFinanceFilters(req.query), scopedBranchId);
+    res.json(createResponse(summary));
   } catch (error) {
     next(error);
+  }
+});
+
+router.get('/teachers', async (req, res, next) => {
+  try {
+    const scopedBranchId = req.user?.canonicalRole === 'branch_manager' ? req.user.branchId : undefined;
+    const teachers = await financeAggregationService.getTeacherOverview(readFinanceFilters(req.query), scopedBranchId);
+    res.json(createResponse(teachers));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/teachers/:id', async (req, res, next) => {
+  try {
+    const scopedBranchId = req.user?.canonicalRole === 'branch_manager' ? req.user.branchId : undefined;
+    const detail = await financeAggregationService.getTeacherDetail(req.params.id, readFinanceFilters(req.query), scopedBranchId);
+    res.json(createResponse(detail));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load teacher finance detail';
+    res.status(404).json(createError(message));
   }
 });
 
@@ -266,25 +95,42 @@ router.get('/', validate(paginationSchema), async (req, res, next) => {
   try {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
+    const scopedBranchId = req.user?.canonicalRole === 'branch_manager' ? req.user.branchId : req.query.branchId;
+    const branchFilter = scopedBranchId ? { branchId: scopedBranchId } : {};
+    const paymentMatch = { isDeleted: false, status: { $nin: ['cancelled', 'refunded', 'reversed'] }, ...branchFilter };
+    const entryMatch = { isDeleted: false, ...branchFilter };
+    const expenseMatch = { isDeleted: false, category: { $nin: ['income', 'salary'] }, ...branchFilter };
+    const fetchWindow = Math.min(page * limit + limit, 1000);
 
-    const [payments, financeEntries, expenses] = await Promise.all([
-      Payment.find({ isDeleted: false })
+    const [paymentTotal, entryTotal, expenseTotal, payments, financeEntries, expenses] = await Promise.all([
+      Payment.countDocuments(paymentMatch),
+      FinanceEntry.countDocuments(entryMatch),
+      Expense.countDocuments(expenseMatch),
+      Payment.find(paymentMatch)
         .populate('studentId', 'firstName lastName studentId')
+        .populate('payeeUserId', 'name role')
+        .sort({ paymentDate: -1 })
+        .limit(fetchWindow)
         .lean(),
-      FinanceEntry.find({ isDeleted: false }).lean(),
-      Expense.find({ isDeleted: false, category: { $ne: 'income' } }).lean()
+      FinanceEntry.find(entryMatch).sort({ date: -1 }).limit(fetchWindow).lean(),
+      Expense.find(expenseMatch).sort({ date: -1 }).limit(fetchWindow).lean()
     ]);
 
     const items = [
       ...payments.map((payment: any) => ({
         id: payment._id,
-        title: `Student payment - ${payment.studentId?.firstName ?? ''} ${payment.studentId?.lastName ?? ''}`.trim(),
-        amount: payment.amount,
-        category: 'student_payment',
+        title: payment.paymentFor === 'student_fee'
+          ? `Student payment - ${payment.studentId?.firstName ?? ''} ${payment.studentId?.lastName ?? ''}`.trim()
+          : `Salary payment - ${payment.payeeUserId?.name ?? 'Employee'}`,
+        amount: payment.paymentFor === 'student_fee'
+          ? Number(payment.netAmount ?? payment.amount ?? 0)
+          : -Math.abs(Number(payment.grossAmount ?? payment.amount ?? 0)),
+        category: payment.paymentFor === 'student_fee' ? 'student_payment' : 'salary_payment',
         date: payment.paymentDate,
         source: 'payment',
         referenceNumber: payment.referenceNumber ?? '',
-        notes: payment.notes ?? ''
+        notes: payment.notes ?? '',
+        status: payment.status ?? 'completed'
       })),
       ...financeEntries.map((entry: any) => ({
         id: entry._id,
@@ -293,7 +139,8 @@ router.get('/', validate(paginationSchema), async (req, res, next) => {
         category: entry.category,
         date: entry.date,
         source: entry.source,
-        notes: entry.notes ?? ''
+        notes: entry.notes ?? '',
+        status: 'completed'
       })),
       ...expenses.map((entry: any) => ({
         id: entry._id,
@@ -302,13 +149,14 @@ router.get('/', validate(paginationSchema), async (req, res, next) => {
         category: entry.category,
         date: entry.date,
         source: 'expense',
-        notes: entry.notes ?? ''
+        notes: entry.notes ?? '',
+        status: 'completed'
       }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const paginatedItems = items.slice((page - 1) * limit, page * limit);
 
-    res.json(createResponse(paginatedItems, '', { page, limit, total: items.length }));
+    res.json(createResponse(paginatedItems, '', { page, limit, total: paymentTotal + entryTotal + expenseTotal }));
   } catch (error) {
     next(error);
   }

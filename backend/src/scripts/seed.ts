@@ -16,6 +16,15 @@ import { Book } from '../models/Book';
 import { Notification } from '../models/Notification';
 import { AuditLog } from '../models/AuditLog';
 import { SalaryTransaction } from '../models/SalaryTransaction';
+import { Payment } from '../models/Payment';
+import { SalarySetting } from '../models/SalarySetting';
+import { SalaryRecord } from '../models/SalaryRecord';
+import { getHijriYearMonth } from '../services/afghanistanSalaryTaxService';
+import { calculateSalaryRecord } from '../services/payrollCalculation.service';
+import { TeacherCompensationService } from '../services/teacherCompensationService';
+
+const STUDENT_FEE_AMOUNT = 1000;
+const STUDENTS_PER_TEACHER = 10;
 
 const ACCOUNT_FILE_PATH = path.resolve(process.cwd(), '..', 'account', 'accounts.md');
 
@@ -108,25 +117,32 @@ async function clearDatabase() {
     Book.deleteMany({}),
     Notification.deleteMany({}),
     AuditLog.deleteMany({}),
-    SalaryTransaction.deleteMany({})
+    SalaryTransaction.deleteMany({}),
+    Payment.deleteMany({}),
+    SalarySetting.deleteMany({}),
+    SalaryRecord.deleteMany({})
   ]);
   console.log('All data deleted.');
 }
 
 async function createSuperAdmin() {
   console.log('Creating super admin...');
-  const hashedPassword = await bcrypt.hash('12345678', 10);
+  const superAdminEmail = process.env.SEED_SUPER_ADMIN_EMAIL || 'admin@gmail.com';
+  const superAdminPassword = process.env.SEED_SUPER_ADMIN_PASSWORD || 'Admin123!';
+  const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
   const superAdmin = await User.create({
     name: 'Super Admin',
-    email: 'admin@gmail.com',
+    email: superAdminEmail,
     password: hashedPassword,
     role: 'super_admin'
   });
   console.log('Super admin created.');
-  return superAdmin;
+  return { superAdmin, superAdminPassword };
 }
 
-async function createUserAccounts(accounts: { [key: string]: { name: string; email: string; password: string; role: string }[] }) {
+type SeedAccount = { name: string; email: string; password: string; role: string; percentage?: string; students?: string };
+
+async function createUserAccounts(accounts: { [key: string]: SeedAccount[] }) {
   console.log('Creating user accounts...');
   const teachers: any[] = [];
   const students: any[] = [];
@@ -153,8 +169,7 @@ async function createUserAccounts(accounts: { [key: string]: { name: string; ema
     const lastName = faker.person.lastName();
     const name = `${firstName} ${lastName}`;
     const hashedPassword = await bcrypt.hash('Teacher123!', 10);
-    const salaryType = faker.helpers.arrayElement(['fixed', 'percentage']);
-    const salaryValue = salaryType === 'fixed' ? faker.number.int({ min: 8000, max: 25000 }) : faker.number.int({ min: 10, max: 35 });
+    const percentageRate = faker.number.int({ min: 20, max: 40 });
     const user = await User.create({
       name,
       email: `teacher${i}@nokta.com`,
@@ -166,14 +181,22 @@ async function createUserAccounts(accounts: { [key: string]: { name: string; ema
       phone: faker.phone.number(),
       whatsapp: faker.phone.number(),
       profileImage: TEACHER_PROFILE_IMAGES[(i - 1) % TEACHER_PROFILE_IMAGES.length],
-      salaryType,
-      fixedSalary: salaryType === 'fixed' ? salaryValue : 0,
-      percentageRate: salaryType === 'percentage' ? salaryValue : 35,
+      salaryType: 'percentage',
+      fixedSalary: 0,
+      percentageRate,
+      customPercentage: 0,
       assignedSubjects: [],
       assignedClasses: []
     });
     teachers.push(user);
-    accounts.teacher.push({ name, email: user.email, password: 'Teacher123!', role: 'teacher' });
+    accounts.teacher.push({
+      name,
+      email: user.email,
+      password: 'Teacher123!',
+      role: 'teacher',
+      percentage: `${percentageRate}%`,
+      students: String(STUDENTS_PER_TEACHER)
+    });
   }
 
   for (let i = 1; i <= 100; i++) {
@@ -247,65 +270,44 @@ function chooseRandomSubjectTitles(count: number) {
 }
 
 async function createClassesAndSubjects(teachers: any[]) {
-  console.log('Creating classes and subjects...');
+  console.log('Creating classes and subjects (1 teacher per class, fee 1000 AF)...');
   const classes: any[] = [];
   const subjects: any[] = [];
-  const teacherAssignments: Record<string, { subjectIds: mongoose.Types.ObjectId[]; classIds: mongoose.Types.ObjectId[] }> = {};
 
-  const teacherQueue = [...teachers];
-  faker.helpers.shuffle(teacherQueue);
-
-  for (let i = 1; i <= 10; i++) {
-    const className = CLASS_NAMES[i - 1] ?? `Class ${i}`;
-    const subjectCount = faker.number.int({ min: 3, max: 5 });
-    const classSubjects: any[] = [];
-    const assignedTeacherIds = new Set<string>();
+  for (let i = 0; i < 10; i++) {
+    const teacher = teachers[i];
+    const className = CLASS_NAMES[i] ?? `Class ${i + 1}`;
+    const subjectTitle = SUBJECT_TITLES[i] ?? className;
 
     const classData = await Class.create({
       className,
       name: className,
       assignedSubjects: [],
-      assignedTeachers: [],
-      capacity: 40
+      assignedTeachers: [teacher._id],
+      capacity: 15,
+      feeAmount: STUDENT_FEE_AMOUNT
     });
 
-    const subjectEntries = chooseRandomSubjectTitles(subjectCount);
-    for (const [subjectIndex, subjectEntry] of subjectEntries.entries()) {
-      const teacher = teacherQueue.length > 0 ? teacherQueue.shift()! : faker.helpers.arrayElement(teachers);
-      const subject = await Subject.create({
-        title: subjectEntry.title,
-        code: `SUB-${i}-${subjectIndex + 1}-${faker.number.int({ min: 100, max: 999 })}`,
-        classId: classData._id,
-        feeAmount: faker.number.int({ min: 1200, max: 4500 }),
-        teacher: teacher._id,
-        description: faker.lorem.sentence()
-      });
-      classSubjects.push(subject);
-      assignedTeacherIds.add(teacher._id.toString());
-      subjects.push(subject);
+    const subject = await Subject.create({
+      title: subjectTitle,
+      code: `SUB-${i + 1}-${STUDENT_FEE_AMOUNT}`,
+      classId: classData._id,
+      feeAmount: STUDENT_FEE_AMOUNT,
+      teacher: teacher._id,
+      description: `${className} - ${subjectTitle}`
+    });
 
-      if (!teacherAssignments[teacher._id.toString()]) {
-        teacherAssignments[teacher._id.toString()] = { subjectIds: [], classIds: [] };
-      }
-      teacherAssignments[teacher._id.toString()].subjectIds.push(subject._id);
-      teacherAssignments[teacher._id.toString()].classIds.push(classData._id);
-    }
-
-    classData.assignedSubjects = classSubjects.map((subject) => subject._id);
-    classData.assignedTeachers = Array.from(assignedTeacherIds);
+    classData.assignedSubjects = [subject._id];
     await classData.save();
-    classes.push(classData);
-  }
 
-  await Promise.all(
-    teachers.map((teacher) => {
-      const assignment = teacherAssignments[teacher._id.toString()] ?? { subjectIds: [], classIds: [] };
-      return User.findByIdAndUpdate(teacher._id, {
-        assignedSubjects: Array.from(new Set(assignment.subjectIds.map(String))).map((id) => new mongoose.Types.ObjectId(id)),
-        assignedClasses: Array.from(new Set(assignment.classIds.map(String))).map((id) => new mongoose.Types.ObjectId(id))
-      });
-    })
-  );
+    await User.findByIdAndUpdate(teacher._id, {
+      assignedSubjects: [subject._id],
+      assignedClasses: [classData._id]
+    });
+
+    classes.push(classData);
+    subjects.push(subject);
+  }
 
   console.log('Classes and subjects created.');
   return { classes, subjects };
@@ -326,61 +328,143 @@ async function createFamilies(count: number) {
   return families;
 }
 
-async function createStudentsAndFamilies(students: any[], classes: any[]) {
-  console.log('Creating student profiles and families...');
+async function createStudentsAndFamilies(
+  students: any[],
+  teachers: any[],
+  classes: any[],
+  subjects: any[],
+  familyStudents: any[] = []
+) {
+  console.log(`Creating student profiles (${STUDENTS_PER_TEACHER} students per teacher, ${STUDENT_FEE_AMOUNT} AF each)...`);
   const families = await createFamilies(Math.ceil(students.length / 3));
-
-  let studentIndex = 0;
   const studentDocs: any[] = [];
 
-  for (const classData of classes) {
-    const classSubjects = await Subject.find({ classId: classData._id });
-    const countPerClass = Math.ceil(students.length / classes.length);
+  for (let studentIndex = 0; studentIndex < students.length; studentIndex++) {
+    const teacherIndex = Math.floor(studentIndex / STUDENTS_PER_TEACHER);
+    const teacher = teachers[teacherIndex];
+    const classData = classes[teacherIndex];
+    const subject = subjects[teacherIndex];
+    const student = students[studentIndex];
+    const family = families[studentIndex % families.length];
 
-    for (let i = 0; i < countPerClass && studentIndex < students.length; i++) {
-      const student = students[studentIndex];
-      const family = faker.helpers.arrayElement(families);
-      const subject = faker.helpers.arrayElement(classSubjects);
-      const feeAmount = faker.number.int({ min: 5000, max: 20000 });
-      const paidAmount = faker.number.int({ min: Math.floor(feeAmount * 0.4), max: feeAmount });
-      const studentDoc = await Student.create({
-        rollNo: `STD-${studentIndex + 1}`,
-        studentId: student.studentId ?? `STD-${studentIndex + 1}`,
-        firstName: student.firstName || student.name.split(' ')[0],
-        lastName: student.lastName || student.name.split(' ').slice(1).join(' '),
-        fatherName: faker.person.fullName(),
-        familyPhone: faker.phone.number(),
-        loginEmail: student.email,
-        profileImage: student.profileImage ?? STUDENT_PROFILE_IMAGES[studentIndex % STUDENT_PROFILE_IMAGES.length],
-        gender: student.gender ?? 'male',
-        classId: classData._id,
-        subjectId: subject._id,
-        teacherId: subject.teacher,
-        feeAmount,
-        paidAmount,
-        familyId: family._id
-      });
+    const studentDoc = await Student.create({
+      rollNo: `STD-${studentIndex + 1}`,
+      studentId: student.studentId ?? `STD-${String(studentIndex + 1).padStart(4, '0')}`,
+      firstName: student.firstName || student.name.split(' ')[0],
+      lastName: student.lastName || student.name.split(' ').slice(1).join(' '),
+      fatherName: faker.person.fullName(),
+      familyPhone: faker.phone.number(),
+      loginEmail: student.email,
+      profileImage: student.profileImage ?? STUDENT_PROFILE_IMAGES[studentIndex % STUDENT_PROFILE_IMAGES.length],
+      gender: student.gender ?? 'male',
+      classId: classData._id,
+      subjectId: subject._id,
+      teacherId: teacher._id,
+      feeAmount: STUDENT_FEE_AMOUNT,
+      paidAmount: STUDENT_FEE_AMOUNT,
+      remainingBalance: 0,
+      familyId: family._id
+    });
 
-      family.students.push(studentDoc._id);
-      await User.findByIdAndUpdate(student._id, {
-        classId: classData._id,
-        subjectId: subject._id,
-        assignedTeacherId: subject.teacher,
-        profileImage: student.profileImage ?? STUDENT_PROFILE_IMAGES[studentIndex % STUDENT_PROFILE_IMAGES.length],
-        feeAmount,
-        paidAmount,
-        remainingBalance: feeAmount - paidAmount
-      });
+    family.students.push(studentDoc._id);
+    await User.findByIdAndUpdate(student._id, {
+      classId: classData._id,
+      subjectId: subject._id,
+      assignedTeacherId: teacher._id,
+      profileImage: student.profileImage ?? STUDENT_PROFILE_IMAGES[studentIndex % STUDENT_PROFILE_IMAGES.length],
+      feeAmount: STUDENT_FEE_AMOUNT,
+      paidAmount: STUDENT_FEE_AMOUNT,
+      remainingBalance: 0
+    });
 
-      studentDocs.push(studentDoc);
-      studentIndex += 1;
-    }
+    studentDocs.push(studentDoc);
+  }
+
+  // Link family portal accounts to Family records so parent/family login can open /families.
+  for (let familyIndex = 0; familyIndex < familyStudents.length; familyIndex++) {
+    const familyUser = familyStudents[familyIndex];
+    const family = families[familyIndex % families.length];
+    if (!familyUser || !family) continue;
+
+    family.guardianName = familyUser.name;
+    family.guardianEmail = familyUser.email;
+    family.guardianPhone = familyUser.phone || family.guardianPhone || faker.phone.number();
+
+    await User.findByIdAndUpdate(familyUser._id, {
+      familyId: family._id,
+      status: 'active',
+      active: true
+    });
   }
 
   await Promise.all(families.map((family) => family.save()));
 
   console.log('Students and families created.');
   return { families, studentDocs };
+}
+
+async function createFinancialPaymentsAndSalary(teachers: any[], studentDocs: any[], financeActor: any) {
+  console.log('Creating student fee payments, salary settings, and payroll records...');
+  const compensationService = new TeacherCompensationService();
+  const paymentDate = new Date();
+  const { year: hijriYear, month: hijriMonth } = getHijriYearMonth(paymentDate);
+  const teacherById = new Map(teachers.map((teacher) => [String(teacher._id), teacher]));
+
+  let invoiceCounter = 1;
+  for (const studentDoc of studentDocs) {
+    const teacher = teacherById.get(String(studentDoc.teacherId));
+    const payment = await Payment.create({
+      paymentFor: 'student_fee',
+      studentId: studentDoc._id,
+      classId: studentDoc.classId,
+      subjectId: studentDoc.subjectId,
+      teacherId: studentDoc.teacherId,
+      amount: STUDENT_FEE_AMOUNT,
+      status: 'completed',
+      currency: 'AFN',
+      method: 'cash',
+      invoiceNumber: `INV-SEED-${String(invoiceCounter).padStart(5, '0')}`,
+      referenceNumber: `SEED-PAY-${String(invoiceCounter).padStart(5, '0')}`,
+      paymentDate,
+      collectedBy: financeActor?._id ?? null,
+      notes: 'Seeded student fee payment'
+    });
+    invoiceCounter += 1;
+
+    if (teacher) {
+      await compensationService.recordPaymentCommission({
+        payment,
+        student: studentDoc,
+        teacher,
+        createdBy: financeActor?._id ?? null
+      });
+    }
+  }
+
+  for (const teacher of teachers) {
+    const percentage = Number(teacher.percentageRate || 0);
+    await SalarySetting.create({
+      userId: teacher._id,
+      role: 'teacher',
+      salaryType: 'percentage',
+      fixedAmount: 0,
+      percentage,
+      percentageScope: 'branch',
+      isActive: true,
+      createdBy: financeActor?._id ?? null
+    });
+
+    await calculateSalaryRecord({
+      userId: String(teacher._id),
+      hijriYear,
+      hijriMonth,
+      actorId: financeActor?._id ?? null,
+      allowAllSystemScope: true,
+      forceRecalculate: true
+    });
+  }
+
+  console.log('Financial payments and payroll records created.');
 }
 
 async function createExams(subjects: any[]) {
@@ -563,7 +647,7 @@ async function createFinanceAndSupportData(teachers: any[], classes: any[]) {
   return { expenses, books, notifications, auditLogs, salaryTransactions };
 }
 
-function generateAccountsFile(accounts: { [key: string]: { name: string; email: string; password: string; role: string }[] }) {
+function generateAccountsFile(accounts: { [key: string]: SeedAccount[] }) {
   console.log('Generating accounts file...');
   let content = '# System Accounts\n\n';
 
@@ -579,7 +663,10 @@ function generateAccountsFile(accounts: { [key: string]: { name: string; email: 
 
   content += '## Teachers\n';
   accounts.teacher.forEach((acc) => {
-    content += `Name: ${acc.name}\nEmail: ${acc.email}\nPassword: ${acc.password}\nRole: ${acc.role}\n\n`;
+    content += `Name: ${acc.name}\nEmail: ${acc.email}\nPassword: ${acc.password}\nRole: ${acc.role}`;
+    if (acc.percentage) content += `\nCommission: ${acc.percentage}`;
+    if (acc.students) content += `\nAssigned Students: ${acc.students}`;
+    content += '\n\n';
   });
 
   content += '## Students\n';
@@ -612,13 +699,21 @@ function generateAccountsFile(accounts: { [key: string]: { name: string; email: 
 }
 
 async function seedDatabase() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Database seed is blocked in production. Use create-super-admin with SUPER_ADMIN_PASSWORD instead.');
+  }
+
+  if (!process.env.SEED_SUPER_ADMIN_PASSWORD) {
+    console.warn('Warning: SEED_SUPER_ADMIN_PASSWORD is not set. Default demo passwords will be used (development only).');
+  }
+
   try {
     await connectDatabase();
     console.log('Connected to database.');
 
     await clearDatabase();
 
-    const accounts: { [key: string]: { name: string; email: string; password: string; role: string }[] } = {
+    const accounts: { [key: string]: SeedAccount[] } = {
       super_admin: [],
       admin: [],
       teacher: [],
@@ -628,12 +723,19 @@ async function seedDatabase() {
       librarian: []
     };
 
-    const superAdmin = await createSuperAdmin();
-    accounts.super_admin.push({ name: superAdmin.name, email: superAdmin.email, password: '12345678', role: 'super_admin' });
+    const { superAdmin, superAdminPassword } = await createSuperAdmin();
+    accounts.super_admin.push({ name: superAdmin.name, email: superAdmin.email, password: superAdminPassword, role: 'super_admin' });
 
-    const { teachers, students } = await createUserAccounts(accounts);
+    const { teachers, students, familyStudents } = await createUserAccounts(accounts);
     const { classes, subjects } = await createClassesAndSubjects(teachers);
-    const { families } = await createStudentsAndFamilies(students, classes);
+    const { families, studentDocs } = await createStudentsAndFamilies(
+      students,
+      teachers,
+      classes,
+      subjects,
+      familyStudents
+    );
+    await createFinancialPaymentsAndSalary(teachers, studentDocs, superAdmin);
     const exams = await createExams(subjects);
     await createResults(exams, teachers);
     await createFinanceAndSupportData(teachers, classes);

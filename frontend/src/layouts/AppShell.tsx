@@ -1,33 +1,51 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/locales/i18n';
 import { useAuthStore } from '@/store/authStore';
-import { getMenuForUser, getRouteLabel, hasExplicitAccessProfile, userHasModuleAction } from '@/features/resources/config/modules';
-import { Bell, LogOut, Menu, UserCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { getMenuForUser, getRouteLabel, normalizeRole, userCanOpenPath } from '@/features/resources/config/modules';
+import { Bell, LogOut, Menu, Search, ChevronLeft, ChevronRight, X, User, UserCircle } from 'lucide-react';
+import { messagesService } from '@/features/messages/services/messagesService';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { designSystem } from '@/constants/designSystem';
+import { authService } from '@/features/auth/services/authService';
+import { getStoredAuthValue } from '@/features/auth/utils/authStorage';
 import { api } from '@/services/apiClient';
 
 const sidebarIconClasses: Record<string, string> = {
-  '/dashboard': 'text-primary',
-  '/students': 'text-accent',
-  '/teachers': 'text-secondary',
-  '/classes': 'text-warning',
-  '/subjects': 'text-indigo-400',
-  '/exams': 'text-yellow-400',
-  '/results': 'text-blue-400',
-  '/finance': 'text-accent',
-  '/expenses': 'text-danger',
-  '/books': 'text-indigo-400',
-  '/families': 'text-secondary',
-  '/audit': 'text-slate-300',
-  '/notifications': 'text-blue-400',
-  '/profile': 'text-slate-300',
-  '/roles': 'text-slate-400',
+  '/dashboard': 'text-indigo-600 dark:text-indigo-300',
+  '/enterprise': 'text-cyan-700 dark:text-cyan-300',
+  '/academic-standards': 'text-violet-700 dark:text-violet-300',
+  '/branches': 'text-sky-700 dark:text-sky-300',
+  '/users': 'text-slate-900 dark:text-slate-100',
+  '/students': 'text-emerald-700 dark:text-emerald-300',
+  '/teachers': 'text-cyan-700 dark:text-cyan-300',
+  '/classes': 'text-amber-700 dark:text-amber-300',
+  '/timetable': 'text-teal-700 dark:text-teal-300',
+  '/courses': 'text-fuchsia-700 dark:text-fuchsia-300',
+  '/subjects': 'text-indigo-700 dark:text-indigo-300',
+  '/attendance': 'text-lime-700 dark:text-lime-300',
+  '/exams': 'text-yellow-700 dark:text-yellow-300',
+  '/results': 'text-blue-700 dark:text-blue-300',
+  '/payments': 'text-emerald-700 dark:text-emerald-300',
+  '/finance': 'text-emerald-700 dark:text-emerald-300',
+  '/loans': 'text-amber-700 dark:text-amber-300',
+  '/expenses': 'text-rose-700 dark:text-rose-300',
+  '/payroll': 'text-orange-700 dark:text-orange-300',
+  '/academy-financial-report': 'text-emerald-800 dark:text-emerald-200',
+  '/reports': 'text-sky-800 dark:text-sky-200',
+  '/books': 'text-indigo-700 dark:text-indigo-300',
+  '/families': 'text-cyan-700 dark:text-cyan-300',
+  '/curriculum': 'text-purple-700 dark:text-purple-300',
+  '/ai-assistant': 'text-fuchsia-700 dark:text-fuchsia-300',
+  '/audit': 'text-slate-900 dark:text-slate-100',
+  '/notifications': 'text-blue-700 dark:text-blue-300',
+  '/profile': 'text-slate-900 dark:text-slate-100',
+  '/roles': 'text-slate-900 dark:text-slate-100',
+  '/messages': 'text-sky-700 dark:text-sky-300',
+  '/settings': 'text-slate-700 dark:text-slate-200',
 };
 
 export function AppShell() {
@@ -38,39 +56,80 @@ export function AppShell() {
   const user = useAuthStore((state) => state.user);
   const [collapsed, setCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const strictPermissions = hasExplicitAccessProfile(user);
-  const roleCanAccessNotifications = Boolean(
-    user?.role && ['super_admin', 'admin', 'teacher', 'student', 'parent', 'owner', 'branch_manager', 'system_automation'].includes(user.role)
-  );
-  const canAccessNotifications = strictPermissions
-    ? userHasModuleAction(user, 'notifications', 'read')
-    : roleCanAccessNotifications || userHasModuleAction(user, 'notifications', 'read');
+  const canAccessNotifications = userCanOpenPath(user, '/notifications');
+  const canAccessMessages = userCanOpenPath(user, '/messages');
   const { data: unreadCountData } = useQuery({
-    queryKey: ['notifications-unread-count', user?.role],
+    queryKey: ['notifications-unread-count', user?.id],
     queryFn: () => api.get('/notifications/unread-count').then((res) => res.data.data as { unreadCount: number }),
     enabled: canAccessNotifications,
-    refetchInterval: 30000
+    staleTime: 90_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false
+  });
+  const { data: messageUnreadData } = useQuery({
+    queryKey: ['messages-unread-count', user?.id],
+    queryFn: () => messagesService.unreadCount(),
+    enabled: canAccessMessages,
+    staleTime: 90_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false
   });
   const unreadCount = unreadCountData?.unreadCount ?? 0;
+  const messageUnreadCount = messageUnreadData?.unreadCount ?? 0;
 
-  const menu = useMemo(
-    () =>
-      getMenuForUser(user).map((item) => ({
-        ...item,
-        label: t(item.label),
-      })),
-    [user, t]
-  );
+  const sidebarLinkClass = (isActive: boolean) =>
+    `sidebar-item w-full ${isActive ? 'sidebar-item-active' : ''}`;
+
+  const menu = useMemo(() => {
+    const role = normalizeRole(user?.role);
+    const dashboardLabelByRole: Record<string, string> = {
+      super_admin: 'dashboard.super_admin_dashboard',
+      admin: 'dashboard.admin_dashboard',
+      teacher: 'dashboard.teacher_dashboard',
+      student: 'dashboard.student_dashboard',
+      parent: 'dashboard.family_dashboard',
+      owner: 'dashboard.owner_dashboard',
+      branch_manager: 'dashboard.branch_manager_dashboard',
+      system_automation: 'common.dashboard'
+    };
+
+    const items = getMenuForUser(user).map((item) => {
+      if (item.path === '/dashboard') {
+        const labelKey = (role && dashboardLabelByRole[role]) || item.label;
+        return { ...item, label: t(labelKey, { defaultValue: t(item.label) }) };
+      }
+      return { ...item, label: t(item.label) };
+    });
+    if (user && !items.some((item) => item.path === '/profile')) {
+      items.push({
+        path: '/profile',
+        label: t('common.profile'),
+        icon: UserCircle,
+        roles: [] as any,
+      });
+    }
+    return items;
+  }, [user, t]);
+
+  const displayRoleKey = user?.originalRole || user?.role;
 
   const activeLabel = useMemo(
     () => t(getRouteLabel(user?.role ?? null, location.pathname)),
     [location.pathname, t, user?.role]
   );
 
-  const handleLogout = useCallback(() => {
-    logout();
-    navigate('/login');
+  const handleLogout = useCallback(async () => {
+    try {
+      await authService.logout(getStoredAuthValue('refreshToken'));
+    } catch {
+      // Local logout still guarantees client-side cleanup.
+    } finally {
+      logout();
+      navigate('/login');
+    }
   }, [logout, navigate]);
+
+  const profileImage = user?.profileImage || '';
 
   const isRtl = i18n.language !== 'en';
   const sidebarPosition = isRtl ? 'right-0' : 'left-0';
@@ -80,31 +139,43 @@ export function AppShell() {
   const mobileDrawerAnimate = isRtl ? 320 : -320;
   const CollapseIcon = collapsed ? (isRtl ? ChevronLeft : ChevronRight) : (isRtl ? ChevronRight : ChevronLeft);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const isShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+      if (!isShortcut) return;
+      event.preventDefault();
+      navigate('/global-search');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [navigate]);
+
   return (
-    <div className={`min-h-screen bg-background text-slate-100 overflow-x-hidden ${i18n.language === 'en' ? 'ltr' : 'rtl'}`}>
-      <div className="relative lg:flex overflow-x-hidden">
+    <div className={`app-bg h-dvh max-h-dvh overflow-hidden ${i18n.language === 'en' ? 'ltr' : 'rtl'}`}>
+      <div className="relative flex h-dvh max-h-dvh overflow-hidden">
         <motion.aside
+          data-no-print
           initial={false}
           animate={{ width: collapsed ? 80 : 260 }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className={`fixed inset-y-0 ${sidebarPosition} z-40 hidden flex-col ${sidebarBorder} border-white/10 bg-white/5 backdrop-blur-xl shadow-glow lg:flex`}
+          className={`sidebar-shell fixed inset-y-0 ${sidebarPosition} z-40 hidden flex-col ${sidebarBorder} backdrop-blur-xl lg:flex`}
         >
-          <div className="flex h-20 items-center justify-between gap-3 border-b border-white/10 px-4">
+          <div className="app-border flex h-20 items-center justify-between gap-3 border-b px-4">
             <div className={`flex items-center gap-3 ${collapsed ? 'justify-center w-full' : ''}`}>
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white/95 shadow-[0_15px_40px_rgba(245,158,11,0.18)] ring-1 ring-amber-200/40">
                 <img src="/images/1.png" alt="Nokta Academy" className="h-full w-full object-contain p-1" />
               </div>
               {!collapsed && (
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{t('common.home_brand')}</p>
-                  <p className="text-sm font-semibold text-white">{t('common.dashboard')}</p>
+                  <p className="app-text-muted text-xs uppercase tracking-[0.35em]">{t('common.home_brand')}</p>
+                  <p className="app-text-strong text-sm font-semibold">{t('common.dashboard')}</p>
                 </div>
               )}
             </div>
             <button
               type="button"
               onClick={() => setCollapsed((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-slate-100 transition duration-300 hover:bg-white/15"
+              className="app-surface inline-flex h-11 w-11 items-center justify-center rounded-3xl transition duration-300 hover:brightness-105"
             >
               <CollapseIcon size={18} />
             </button>
@@ -116,31 +187,37 @@ export function AppShell() {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-[24px] px-3 py-3 text-sm ${designSystem.transitions} ${
-                      isActive
-                        ? 'bg-gradient-to-r from-primary/80 via-secondary/30 to-accent/30 text-white shadow-[0_0_30px_rgba(79,70,229,0.3)] ring-1 ring-white/15'
-                        : 'text-slate-300 hover:scale-[1.03] hover:bg-white/10 hover:text-white'
-                    }`
-                  }
+                  end={item.path === '/dashboard'}
+                  className={({ isActive }) => sidebarLinkClass(isActive)}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon size={18} className={`${sidebarIconClasses[item.path] ?? 'text-slate-300'}`} />
-                  <span className={`${collapsed ? 'hidden' : 'block truncate'}`}>{item.label}</span>
+                  <span className="sidebar-item-icon">
+                    <item.icon size={18} className={`h-[1.125rem] w-[1.125rem] shrink-0 ${sidebarIconClasses[item.path] ?? 'text-slate-500 dark:text-slate-300'}`} />
+                  </span>
+                  <span className={`${collapsed ? 'hidden' : 'block min-w-0 flex-1 truncate'}`}>{item.label}</span>
+                  {!collapsed && (
+                    <span className="flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center">
+                      {item.path === '/messages' && messageUnreadCount > 0 ? (
+                        <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                          {messageUnreadCount > 99 ? '99+' : messageUnreadCount}
+                        </span>
+                      ) : null}
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </div>
           </nav>
 
-          <div className={`border-t border-white/10 p-4 ${collapsed ? 'hidden' : 'block'}`}>
-            <div className="glass-panel p-4 text-slate-300">
-              <p className="text-xs uppercase tracking-wider text-slate-500">{t('dashboard.signed_in_as')}</p>
-              <p className="mt-2 font-semibold text-white">{user?.name ?? t('common.guest')}</p>
-              <p className="text-xs text-slate-400">{user?.role ? t(`common.${user.role}`) : t('common.no_role')}</p>
+          <div className={`app-border border-t p-4 ${collapsed ? 'hidden' : 'block'}`}>
+            <div className="glass-panel p-4">
+              <p className="app-text-muted text-xs uppercase tracking-wider">{t('dashboard.signed_in_as')}</p>
+              <p className="app-text-strong mt-2 font-semibold">{user?.name ?? t('common.guest')}</p>
+              <p className="app-text-muted text-xs">{displayRoleKey ? t(`common.${displayRoleKey}`) : t('common.no_role')}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-[28px] border border-rose-400/30 bg-gradient-to-r from-rose-500 to-red-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:scale-[1.03] hover:shadow-[0_18px_40px_rgba(239,68,68,0.3)]"
+              className="danger-soft-button mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold transition duration-200 hover:brightness-105"
             >
               <LogOut size={16} /> {t('common.logout')}
             </button>
@@ -149,7 +226,7 @@ export function AppShell() {
 
         <AnimatePresence>
           {sidebarOpen && (
-            <motion.div className="fixed inset-0 z-50 lg:hidden">
+            <motion.div className="fixed inset-0 z-50 lg:hidden" data-no-print>
               <motion.button
                 type="button"
                 className="absolute inset-0 bg-black/60"
@@ -163,14 +240,14 @@ export function AppShell() {
                 animate={{ x: 0 }}
                 exit={{ x: mobileDrawerAnimate }}
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
-                className={`absolute inset-y-0 ${mobileDrawerPosition} z-50 w-72 overflow-y-auto ${sidebarBorder} border-white/10 bg-white/5 p-5 shadow-glow backdrop-blur-xl`}
+                className={`sidebar-shell absolute inset-y-0 ${mobileDrawerPosition} z-50 w-72 overflow-y-auto ${sidebarBorder} p-5 backdrop-blur-xl`}
               >
                 <div className="mb-6 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-400">{t('common.home_brand')}</p>
-                    <h1 className="text-xl font-semibold text-white">{t('common.dashboard')}</h1>
+                    <p className="app-text-muted text-xs uppercase tracking-wider">{t('common.home_brand')}</p>
+                    <h1 className="app-text-strong text-xl font-semibold">{t('common.dashboard')}</h1>
                   </div>
-                  <button type="button" className="text-slate-200" onClick={() => setSidebarOpen(false)}>
+                  <button type="button" className="app-text" onClick={() => setSidebarOpen(false)}>
                     <X size={20} />
                   </button>
                 </div>
@@ -179,28 +256,32 @@ export function AppShell() {
                     <NavLink
                       key={item.path}
                       to={item.path}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-[24px] px-3 py-3 text-sm ${designSystem.transitions} ${
-                          isActive
-                            ? 'bg-gradient-to-r from-primary/80 via-secondary/30 to-accent/30 text-white shadow-[0_0_30px_rgba(79,70,229,0.3)] ring-1 ring-white/15'
-                            : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                        }`
-                      }
+                      end={item.path === '/dashboard'}
+                      className={({ isActive }) => sidebarLinkClass(isActive)}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <item.icon size={18} className={`${sidebarIconClasses[item.path] ?? 'text-slate-300'}`} />
-                      <span>{item.label}</span>
+                      <span className="sidebar-item-icon">
+                        <item.icon size={18} className={`h-[1.125rem] w-[1.125rem] shrink-0 ${sidebarIconClasses[item.path] ?? 'text-slate-500 dark:text-slate-300'}`} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      <span className="flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center">
+                        {item.path === '/messages' && messageUnreadCount > 0 ? (
+                          <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                            {messageUnreadCount > 99 ? '99+' : messageUnreadCount}
+                          </span>
+                        ) : null}
+                      </span>
                     </NavLink>
                   ))}
                 </nav>
-                <div className="mt-6 glass-panel p-4 text-slate-300">
-                  <p className="text-xs uppercase tracking-wider text-slate-500">{t('dashboard.signed_in_as')}</p>
-                  <p className="mt-2 font-semibold text-white">{user?.name ?? t('common.guest')}</p>
-                  <p className="text-xs text-slate-400">{user?.role ? t(`common.${user.role}`) : t('common.no_role')}</p>
+                <div className="mt-6 glass-panel p-4">
+                  <p className="app-text-muted text-xs uppercase tracking-wider">{t('dashboard.signed_in_as')}</p>
+                  <p className="app-text-strong mt-2 font-semibold">{user?.name ?? t('common.guest')}</p>
+                  <p className="app-text-muted text-xs">{displayRoleKey ? t(`common.${displayRoleKey}`) : t('common.no_role')}</p>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-[28px] border border-rose-400/30 bg-gradient-to-r from-rose-500 to-red-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:scale-[1.03] hover:shadow-[0_18px_40px_rgba(239,68,68,0.3)]"
+                  className="danger-soft-button mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold transition duration-200 hover:brightness-105"
                 >
                   <LogOut size={16} /> {t('common.logout')}
                 </button>
@@ -209,31 +290,40 @@ export function AppShell() {
           )}
         </AnimatePresence>
 
-        <div className={`flex-1 min-h-screen transition-all duration-300 ${contentSpacing} overflow-x-hidden`}>
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-white/5 backdrop-blur-xl px-4 py-4 shadow-glow lg:px-6">
+        <div className={`flex h-dvh max-h-dvh flex-1 flex-col overflow-hidden transition-all duration-300 ${contentSpacing}`}>
+          <header className="app-header z-30 shrink-0 border-b px-4 py-4 backdrop-blur-xl lg:px-6" data-no-print>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-slate-100 transition duration-300 hover:bg-white/15 lg:hidden"
+                  className="app-surface inline-flex h-11 w-11 items-center justify-center rounded-3xl transition duration-300 hover:brightness-105 lg:hidden"
                   onClick={() => setSidebarOpen(true)}
                 >
                   <Menu size={20} />
                 </button>
                 <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{activeLabel}</p>
-                  <h1 className="text-2xl font-semibold text-white">{activeLabel}</h1>
+                  <p className="app-text-muted text-sm uppercase tracking-[0.3em]">{activeLabel}</p>
+                  <h1 className="app-text-strong text-2xl font-semibold">{activeLabel}</h1>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <ThemeToggle />
-                <LanguageSwitcher />
+                <button
+                  type="button"
+                  onClick={() => navigate('/global-search')}
+                  aria-label={t('common.global_search')}
+                  className="app-surface inline-flex h-11 items-center gap-2 rounded-3xl px-3 text-sm transition duration-300 hover:brightness-105"
+                >
+                  <Search size={16} />
+                  <span className="hidden md:inline">{t('common.global_search')}</span>
+                </button>
+                <ThemeToggle className="shrink-0" />
+                <LanguageSwitcher compact />
                 {canAccessNotifications && (
                   <button
                     type="button"
                     onClick={() => navigate('/notifications')}
                     aria-label={t('common.notifications')}
-                    className="relative inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-slate-100 transition duration-300 hover:bg-white/15"
+                    className="app-surface relative inline-flex h-11 w-11 items-center justify-center rounded-3xl transition duration-300 hover:brightness-105"
                   >
                     {unreadCount > 0 && (
                       <span className="absolute -end-2 -top-2 min-w-[1.35rem] rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white">
@@ -243,17 +333,23 @@ export function AppShell() {
                     <Bell size={18} />
                   </button>
                 )}
-                <div className="flex items-center gap-3 rounded-[28px] border border-white/10 bg-white/10 px-4 py-3 text-sm text-slate-100">
-                  <UserCircle className="h-10 w-10 text-slate-300" />
+                <div className="app-surface flex items-center gap-3 rounded-[28px] px-4 py-3 text-sm">
+                  {profileImage ? (
+                    <img src={profileImage} alt={user?.name ?? t('common.profile')} className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary" aria-hidden="true">
+                      <User className="h-5 w-5" strokeWidth={1.8} />
+                    </div>
+                  )}
                   <div>
-                    <div className="font-semibold text-white">{user?.name ?? t('common.guest')}</div>
-                    <div className="text-xs text-slate-400">{user?.role ? t(`common.${user.role}`) : t('common.no_role')}</div>
+                    <div className="app-text-strong font-semibold">{user?.name ?? t('common.guest')}</div>
+                    <div className="app-text-muted text-xs">{displayRoleKey ? t(`common.${displayRoleKey}`) : t('common.no_role')}</div>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="inline-flex h-11 items-center rounded-[28px] border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-100 transition duration-300 hover:scale-[1.03] hover:bg-rose-500/20 hover:shadow-[0_16px_36px_rgba(239,68,68,0.24)]"
+                  className="danger-soft-button inline-flex h-11 items-center rounded-[28px] px-4 py-3 text-sm font-semibold transition duration-300 hover:scale-[1.03]"
                 >
                   <LogOut size={16} />
                 </button>
@@ -261,7 +357,7 @@ export function AppShell() {
             </div>
           </header>
 
-          <main className="px-4 py-6 lg:px-8">
+          <main className="main-content min-h-0 flex-1 overflow-y-auto overflow-x-clip px-4 py-6 lg:px-8">
             <Outlet />
           </main>
         </div>

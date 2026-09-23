@@ -9,6 +9,43 @@ import { normalizeRole } from '../utils/roleHelpers';
 const permissionService = new PermissionService();
 const roleProfileService = new RoleProfileService();
 
+async function resolvePermissionPrincipal(req: Request) {
+  if (!req.user?.userId) {
+    return null;
+  }
+
+  if (req.user.permissions !== undefined && req.user.revokedPermissionKeys !== undefined) {
+    return req.user;
+  }
+
+  const currentUser = await User.findById(req.user.userId)
+    .select('role permissionKeys revokedPermissionKeys permissions')
+    .lean<Record<string, any>>();
+
+  if (!currentUser) {
+    return req.user;
+  }
+
+  const canonicalRole = normalizeRole(currentUser.role);
+  const rolePermissionKeys = canonicalRole
+    ? await roleProfileService.getRolePermissionOverride(canonicalRole)
+    : null;
+
+  const legacyPermissions = currentUser.permissions instanceof Map
+    ? Object.fromEntries(currentUser.permissions.entries())
+    : currentUser.permissions ?? {};
+
+  return {
+    ...req.user,
+    role: currentUser.role,
+    canonicalRole: canonicalRole ?? req.user.canonicalRole,
+    permissionKeys: Array.isArray(currentUser.permissionKeys) ? currentUser.permissionKeys : [],
+    revokedPermissionKeys: Array.isArray(currentUser.revokedPermissionKeys) ? currentUser.revokedPermissionKeys : [],
+    permissions: legacyPermissions,
+    rolePermissionKeys: rolePermissionKeys ?? req.user.rolePermissionKeys
+  };
+}
+
 export function permissionMiddleware(permission: PermissionKey) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user?.userId) {
@@ -32,9 +69,13 @@ export function permissionMiddleware(permission: PermissionKey) {
   };
 }
 
-export function routePermissionMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function routePermissionMiddleware(req: Request, res: Response, next: NextFunction) {
   const policy = permissionService.getRoutePolicy(req.originalUrl, req.method);
-  if (!policy || policy.public) {
+  if (!policy) {
+    return res.status(403).json(createError('Forbidden'));
+  }
+
+  if (policy.public) {
     return next();
   }
 
@@ -42,7 +83,15 @@ export function routePermissionMiddleware(req: Request, res: Response, next: Nex
     return res.status(401).json(createError('Authentication required'));
   }
 
-  return permissionService.hasRequiredAccess(req.user, policy)
-    ? next()
-    : res.status(403).json(createError('Forbidden'));
+  try {
+    const principal = await resolvePermissionPrincipal(req);
+    if (!principal || !permissionService.hasRequiredAccess(principal, policy)) {
+      return res.status(403).json(createError('Forbidden'));
+    }
+
+    req.user = principal;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 }

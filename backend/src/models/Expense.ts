@@ -10,6 +10,7 @@ const expenseSchema = createBaseSchema(
     date: { type: Date, default: Date.now, index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     notes: { type: String, default: '', trim: true },
+    sourcePaymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment', default: null, index: true },
     immutableRecord: { type: Boolean, default: true },
     auditHistory: { type: [auditHistorySchema], default: [] }
   },
@@ -17,5 +18,6 @@ const expenseSchema = createBaseSchema(
 );
 
 expenseSchema.index({ date: -1, branchId: 1 });
+expenseSchema.index({ sourcePaymentId: 1 }, { sparse: true });
 
 export const Expense = mongoose.models.Expense ?? mongoose.model('Expense', expenseSchema);

@@ -9,13 +9,19 @@ const studentSchema = createBaseSchema(
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     fatherName: { type: String, required: true, trim: true },
-    familyPhone: { type: String, required: true, trim: true },
+    familyPhone: { type: String, trim: true, default: '' },
+    whatsapp: { type: String, trim: true, default: '' },
     familyEmail: { type: String, default: '', trim: true, lowercase: true },
     loginEmail: { type: String, default: '', trim: true, lowercase: true },
     profileImage: { type: String, trim: true, default: '' },
     gender: { type: String, enum: ['male', 'female', 'other'], required: true, index: true },
     registrationDate: { type: Date, default: Date.now },
+    registrationStartDate: { type: Date, default: Date.now, index: true },
+    registrationEndDate: { type: Date, default: null, index: true },
     registrationExpiryDate: { type: Date, default: null, index: true },
+    accountStatus: { type: String, enum: ['active', 'warning', 'expired', 'blocked'], default: 'active', index: true },
+    warningSentAt: { type: Date, default: null },
+    blockedAt: { type: Date, default: null },
     classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true, index: true },
     subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -31,11 +37,21 @@ const studentSchema = createBaseSchema(
 
 studentSchema.pre('save', function updateBalance(this: any, next) {
   this.remainingBalance = Number(this.feeAmount || 0) - Number(this.paidAmount || 0);
+  if (!this.registrationStartDate && this.registrationDate) {
+    this.registrationStartDate = this.registrationDate;
+  }
+  if (!this.registrationEndDate && this.registrationExpiryDate) {
+    this.registrationEndDate = this.registrationExpiryDate;
+  }
+  if (!this.registrationExpiryDate && this.registrationEndDate) {
+    this.registrationExpiryDate = this.registrationEndDate;
+  }
   next();
 });
 
 studentSchema.index({ rollNo: 1 }, { unique: true, sparse: true });
 studentSchema.index({ teacherId: 1, classId: 1, status: 1 });
 studentSchema.index({ familyId: 1, registrationExpiryDate: 1 });
+studentSchema.index({ accountStatus: 1, registrationEndDate: 1 });
 
 export const Student = mongoose.models.Student ?? mongoose.model('Student', studentSchema);

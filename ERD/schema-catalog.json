@@ -1,0 +1,282 @@
+{
+  "Identity & organization": [
+    [
+      "User",
+      "users",
+      "email UQ; role; branchId?→Branch; familyId?→Family; parentProfileId?→Parent; ownerProfileId?→Owner; classId?→Class; subjectId?→Subject; assignedTeacherId?→User; assignedSubjects[]→Subject; assignedClasses[]→Class"
+    ],
+    [
+      "SessionToken",
+      "session_tokens",
+      "userId→User; tokenHash UQ; revokedBy?→User"
+    ],
+    [
+      "Role",
+      "roles",
+      "key UQ; slug UQ; permissionKeys[]"
+    ],
+    [
+      "Permission",
+      "permissions",
+      "key UQ; module; action; UQ(module,action)"
+    ],
+    [
+      "AuditLog",
+      "audit_logs",
+      "actor→User; branchId?→Branch; action; metadata"
+    ],
+    [
+      "Branch",
+      "branches",
+      "code UQ; ownerId?→Owner; managerId?→User; deleteRequestedBy?→User; ownerDeleteApprovedBy?→User"
+    ],
+    [
+      "Owner",
+      "owners",
+      "userId UQ→User; branchIds[]→Branch"
+    ],
+    [
+      "Teacher",
+      "teachers",
+      "userId UQ→User; branchId?→Branch; teacherCode UQ; assignedSubjectIds[]→Subject; assignedClassIds[]→Class"
+    ],
+    [
+      "Parent",
+      "parents",
+      "userId UQ→User; branchId?→Branch; linkedStudentIds[]→Student"
+    ],
+    [
+      "Student",
+      "students",
+      "studentId UQ; rollNo UQ?; branchId?→Branch; classId→Class; subjectId→Subject; teacherId→User; familyId→Family; parentProfileId?→Parent"
+    ],
+    [
+      "Family",
+      "families",
+      "guardianEmail; students[]→Student"
+    ],
+    [
+      "FamilyLink",
+      "family_links",
+      "parentId→Parent; studentId→Student; UQ(parentId,studentId)"
+    ]
+  ],
+  "Academic delivery": [
+    [
+      "Class",
+      "classes",
+      "classCode UQ; subjectId?→Subject; teacherId?→User; branchId?→Branch; assignedSubjects[]→Subject; assignedTeachers[]→User"
+    ],
+    [
+      "Subject",
+      "subjects",
+      "code UQ; branchId?→Branch; classId→Class; classIds[]→Class; teacher?→User"
+    ],
+    [
+      "Course",
+      "courses",
+      "branchId?→Branch; linkedClassId?→Class; instructor?→User; teacher?→User; subjects[]→Subject; createdBy?→User; updatedBy?→User"
+    ],
+    [
+      "Curriculum",
+      "curricula",
+      "branchId?→Branch; classId?→Class; subjectId?→Subject"
+    ],
+    [
+      "Enrollment",
+      "enrollments",
+      "studentId→Student; classId→Class; subjectId→Subject; teacherId→User; branchId?→Branch; UQ(studentId,classId,subjectId,academicYear)"
+    ],
+    [
+      "Timetable",
+      "timetable",
+      "branchId?→Branch; classId→Class; subjectId?→Subject; teacherId→User"
+    ],
+    [
+      "LearningResource",
+      "learning_resources",
+      "subjectId?→Subject; classId?→Class; branchId?→Branch; uploadedBy?→User"
+    ],
+    [
+      "Attendance",
+      "attendance",
+      "classId→Class; teacherId→User; studentId?→Student; userId?→User; timetableId?→Timetable; subjectId?→Subject; branchId?→Branch; policyId?→AttendancePolicy; markedBy?→User"
+    ],
+    [
+      "AttendancePolicy",
+      "attendance_policies",
+      "branchId?→Branch"
+    ],
+    [
+      "Book",
+      "books",
+      "branchId?→Branch"
+    ],
+    [
+      "StationerySale",
+      "stationery_sales",
+      "branchId?→Branch; bookId?→Book; studentId?→User; soldBy?→User"
+    ]
+  ],
+  "Assessment & AI": [
+    [
+      "Exam",
+      "exams",
+      "examCode UQ; branchId?→Branch; subject→Subject; class→Class; teacherId→User"
+    ],
+    [
+      "Question",
+      "questions",
+      "examId→Exam; subjectId→Subject"
+    ],
+    [
+      "Result",
+      "results",
+      "student→User; exam→Exam; classId?→Class; subjectId?→Subject; teacherId?→User; gradedBy?→User; UQ(student,exam)"
+    ],
+    [
+      "ExamResult",
+      "exam_results",
+      "studentId→Student; examId→Exam; subjectId→Subject; publishedBy?→User; UQ(studentId,examId)"
+    ],
+    [
+      "AIResultInsight",
+      "ai_result_insights",
+      "studentId→User; examId→Exam; classId→Class; branchId?→Branch; subjectId?→Subject; resultId?→Result; UQ(studentId,examId)"
+    ],
+    [
+      "AIClassExamInsight",
+      "ai_class_exam_insights",
+      "examId→Exam; classId→Class; branchId?→Branch; UQ(examId,classId)"
+    ],
+    [
+      "EnterpriseTranscript",
+      "enterprise_transcripts",
+      "branchId?→Branch; studentId→Student; subjects[].subjectId→Subject; verificationCode UQ?"
+    ],
+    [
+      "EnterpriseOnlineExam",
+      "enterprise_online_exams",
+      "branchId?→Branch; classId→Class; subjectId→Subject; teacherId→User"
+    ],
+    [
+      "EnterpriseExamAttempt",
+      "enterprise_exam_attempts",
+      "examId→EnterpriseOnlineExam; studentId→Student; UQ(examId,studentId)"
+    ],
+    [
+      "EnterpriseAssignment",
+      "enterprise_assignments",
+      "branchId?→Branch; classId→Class; subjectId→Subject; teacherId→User"
+    ],
+    [
+      "EnterpriseAssignmentSubmission",
+      "enterprise_assignment_submissions",
+      "assignmentId→EnterpriseAssignment; studentId→Student; gradedBy?→User; UQ(assignmentId,studentId)"
+    ],
+    [
+      "EnterpriseCertificate",
+      "enterprise_certificates",
+      "branchId?→Branch; studentId→Student; signedBy?→User; verificationCode UQ"
+    ]
+  ],
+  "Finance & payroll": [
+    [
+      "Payment",
+      "payments",
+      "invoiceNumber UQ; studentId?→Student; payeeUserId?→User; salaryRecordIds[]→SalaryRecord; branchId?→Branch; enrollmentId?→Enrollment; classId?→Class; subjectId?→Subject; teacherId?→User; collectedBy?→User"
+    ],
+    [
+      "Expense",
+      "expenses",
+      "branchId?→Branch; createdBy?→User"
+    ],
+    [
+      "FinanceEntry",
+      "finance_entries",
+      "branchId?→Branch; createdBy?→User"
+    ],
+    [
+      "Salary",
+      "salaries",
+      "employeeId→User; branchId?→Branch; paidBy?→User; approvedBy?→User; UQ(employeeId,monthKey)"
+    ],
+    [
+      "SalaryRecord",
+      "salary_records",
+      "userId→User; branchId?→Branch; createdBy?→User; UQ(userId,hijriYear,hijriMonth)"
+    ],
+    [
+      "SalarySetting",
+      "salary_settings",
+      "userId→User; branchId?→Branch; createdBy?→User; updatedBy?→User"
+    ],
+    [
+      "SalaryTransaction",
+      "salarytransactions",
+      "teacherId→User; studentId→Student; courseId?→Course; subjectId→Subject; classId→Class; branchId?→Branch; paymentId?→Payment; createdBy?→User; deletedBy?→User"
+    ],
+    [
+      "TaxRule",
+      "tax_rules",
+      "scope; thresholds; active"
+    ],
+    [
+      "TaxPercentageSetting",
+      "tax_percentage_settings",
+      "branchId?→Branch; createdBy?→User; updatedBy?→User"
+    ]
+  ],
+  "Communication & operations": [
+    [
+      "Message",
+      "messages",
+      "senderId?→User; recipientId?→User; studentId?→Student; teacherId?→User; branchId?→Branch; parentMessageId?→Message; threadId?→Message"
+    ],
+    [
+      "StudentMessage",
+      "student_messages",
+      "branchId?→Branch; studentId→User; teacherId→User"
+    ],
+    [
+      "Notification",
+      "notifications",
+      "branchId?→Branch; classId?→Class; subjectId?→Subject; teacherId?→User; recipientIds[]→User; readBy[]→User"
+    ],
+    [
+      "Announcement",
+      "announcements",
+      "branchId?→Branch; publishedBy?→User"
+    ],
+    [
+      "Advertisement",
+      "advertisements",
+      "branchId?→Branch"
+    ],
+    [
+      "QrContact",
+      "qr_contacts",
+      "userId?→User; branchId?→Branch"
+    ],
+    [
+      "Report",
+      "reports",
+      "branchId?→Branch; generatedBy?→User"
+    ],
+    [
+      "LanguageSetting",
+      "language_settings",
+      "userId?→User; branchId?→Branch"
+    ],
+    [
+      "EnterpriseBackup",
+      "enterprise_backups",
+      "requestedBy?→User"
+    ],
+    [
+      "EnterpriseSecurityEvent",
+      "enterprise_security_events",
+      "userId?→User; type; riskScore"
+    ]
+  ]
+}

@@ -7,10 +7,30 @@
     scroll-behavior: smooth;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary, #0ea5e9);
+    outline-offset: 2px;
+  }
+
   body {
     @apply font-sans antialiased;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: clip;
     color: var(--color-text);
   }
 
@@ -57,23 +77,29 @@
     color: var(--color-text-soft) !important;
   }
 
-  .text-white,
-  .text-slate-100,
-  .text-slate-900 {
-    color: var(--color-text-strong) !important;
-  }
-
-  .text-slate-200,
-  .text-slate-300 {
+  :root[data-theme='light'] .glass-card:not([class*='bg-gradient']) .text-slate-100,
+  :root[data-theme='light'] .glass-card:not([class*='bg-gradient']) .text-slate-200,
+  :root[data-theme='light'] .glass-panel:not([class*='bg-gradient']) .text-slate-100,
+  :root[data-theme='light'] .glass-panel:not([class*='bg-gradient']) .text-slate-200,
+  :root[data-theme='light'] main .text-slate-100:not(.text-white),
+  :root[data-theme='light'] main .text-slate-200:not(.text-white) {
     color: var(--color-text) !important;
   }
 
-  .text-slate-400 {
-    color: var(--color-text-soft) !important;
+  :root[data-theme='light'] .glass-card:not([class*='bg-gradient']) .text-white,
+  :root[data-theme='light'] .glass-panel:not([class*='bg-gradient']) .text-white,
+  :root[data-theme='light'] main .text-white:not([class*='from-']):not([class*='bg-rose']):not([class*='bg-red']):not([class*='bg-emerald']):not([class*='bg-sky']):not([class*='bg-primary']) {
+    color: var(--color-text-strong) !important;
   }
 
-  .text-slate-500 {
-    color: var(--color-text-subtle) !important;
+  :root[data-theme='light'] .glass-card:not([class*='bg-gradient']) .text-slate-300,
+  :root[data-theme='light'] .glass-card:not([class*='bg-gradient']) .text-slate-400,
+  :root[data-theme='light'] .glass-panel:not([class*='bg-gradient']) .text-slate-300,
+  :root[data-theme='light'] .glass-panel:not([class*='bg-gradient']) .text-slate-400,
+  :root[data-theme='light'] main .text-slate-300,
+  :root[data-theme='light'] main .text-slate-400,
+  :root[data-theme='light'] main .text-slate-500 {
+    color: var(--color-text-soft) !important;
   }
 
   .bg-white {

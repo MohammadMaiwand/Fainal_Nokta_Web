@@ -9,8 +9,13 @@
     text-align: left;
   }
 
-  html[dir='ltr'] table th,
-  html[dir='ltr'] table td {
-    text-align: left;
-  }
+html[dir='ltr'] table th,
+html[dir='ltr'] table td {
+  text-align: start;
+}
+
+html[dir='ltr'] table.print-table.academy-financial-data-table th,
+html[dir='ltr'] table.print-table.academy-financial-data-table td {
+  text-align: center;
+}
 }

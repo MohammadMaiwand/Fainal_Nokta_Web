@@ -1,6 +1,9 @@
+@import './fonts.css';
 @import './themes/default.css';
 @import './global/index.css';
 @import './components/index.css';
 @import './layouts/index.css';
 @import './ltr/index.css';
 @import './rtl/index.css';
+@import './print.css';
+@import './exam-print.css';

@@ -14,8 +14,8 @@ export const designSystem = {
     muted: '#94a3b8',
   },
   fonts: {
-    heading: 'Inter, Poppins, sans-serif',
-    body: 'Inter, Poppins, sans-serif',
+    heading: 'var(--app-font-family)',
+    body: 'var(--app-font-family)',
   },
   spacing: {
     container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',

@@ -9,6 +9,11 @@ export function createResponse<T>(data: T, message = '', pagination?: ApiRespons
   };
 }
 
-export function createError(message = 'Unexpected error') {
-  return { success: false, message, data: {} };
+export function createError(message = 'Unexpected error', messageCode?: string) {
+  return {
+    success: false,
+    message,
+    ...(messageCode ? { messageCode } : {}),
+    data: {}
+  };
 }

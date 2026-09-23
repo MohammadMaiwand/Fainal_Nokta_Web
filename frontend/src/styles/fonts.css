@@ -1,0 +1,130 @@
+/* Local multilingual fonts — no CDN at runtime */
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn/Vazirmatn-Light.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Light.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Medium.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --font-english: 'Inter', Arial, sans-serif;
+  --font-rtl: 'Vazirmatn', Tahoma, Arial, sans-serif;
+  --app-font-family: var(--font-english);
+  --font-sans: var(--app-font-family);
+}
+
+html[lang='en'] {
+  --app-font-family: var(--font-english);
+}
+
+html[lang='fa'],
+html[lang='prs'],
+html[lang='dr'],
+html[lang='ps'] {
+  --app-font-family: var(--font-rtl);
+}
+
+html,
+body,
+#root,
+#__next,
+#app {
+  font-family: var(--app-font-family);
+}
+
+button,
+input,
+textarea,
+select,
+option,
+label,
+table,
+th,
+td,
+dialog {
+  font: inherit;
+  font-family: var(--app-font-family);
+}
+
+body {
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+html[dir='rtl'] body {
+  line-height: 1.8;
+}

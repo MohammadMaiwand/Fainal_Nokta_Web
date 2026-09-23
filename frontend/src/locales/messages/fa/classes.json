@@ -1,13 +1,13 @@
 {
-  "class_name": "نام کلاس",
+  "class_name": "نام صنف",
   "subjects": "مضامین",
-  "assigned_teachers": "معلمان تعیین‌شده",
+  "assigned_teachers": "استادان تعیین‌شده",
   "capacity": "ظرفیت",
-  "class_code": "کد کلاس",
-  "assigned_teacher_count": "تعداد معلمان",
+  "class_code": "کود صنف",
+  "assigned_teacher_count": "تعداد استادان",
   "assigned_subject_count": "تعداد مضامین",
   "add_subject": "افزودن مضمون",
-  "choose_teacher": "انتخاب معلم",
+  "choose_teacher": "انتخاب استاد",
   "subject_names": "نام مضامین را وارد کنید",
   "gender_restriction": "محدودیت جنسیت",
   "gender_coed": "مختلط"

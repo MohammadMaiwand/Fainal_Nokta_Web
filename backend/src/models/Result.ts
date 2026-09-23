@@ -5,12 +5,23 @@ const resultSchema = createBaseSchema(
   {
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
+    classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', default: null, index: true },
+    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null, index: true },
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     score: { type: Number, required: true },
     grade: { type: String, required: true, trim: true },
     remarks: { type: String, default: '', trim: true },
     gradedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     publishedAt: { type: Date, default: null, index: true },
     immutableAfterPublish: { type: Boolean, default: true },
+    topicScores: [
+      {
+        topic: { type: String, trim: true, default: '' },
+        earned: { type: Number, default: 0 },
+        maximum: { type: Number, default: 0 },
+        learningOutcome: { type: String, trim: true, default: '' }
+      }
+    ],
     auditHistory: { type: [auditHistorySchema], default: [] }
   },
   { collection: 'results' }

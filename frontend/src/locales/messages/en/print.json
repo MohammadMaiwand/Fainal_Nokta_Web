@@ -1,0 +1,13 @@
+{
+  "preparing": "Preparing print…",
+  "preparing_export": "Preparing export…",
+  "export_failed": "Export failed. Please try again.",
+  "no_data": "There is no information available to print.",
+  "printed_at": "Printed at",
+  "printed_by": "Printed by",
+  "page_of": "Page",
+  "period": "Period",
+  "filter_summary": "Filters",
+  "reference": "Reference",
+  "select_class_first": "Please select a class before printing."
+}

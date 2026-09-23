@@ -1,28 +1,129 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from 'axios';
-import { clearAuthSession, getCurrentAuthStorage, getStoredAuthValue, isRememberedSession, persistAuthSession } from '@/features/auth/utils/authStorage';
+import { clearAuthSession, getCurrentAuthStorage, getStoredAuthValue, getStoredUser, isRememberedSession, persistAuthSession } from '@/features/auth/utils/authStorage';
+import { findReachableApiBase } from '@/utils/apiReachability';
+import { useAuthStore } from '@/store/authStore';
 
-const defaultApiBaseUrl =
-  typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:8081/api`
-    : 'http://127.0.0.1:8081/api';
+function resolveDefaultApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return 'http://127.0.0.1:8081/api';
+  }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || defaultApiBaseUrl;
+  const { hostname, port, origin } = window.location;
+  const isLocalFrontend = ['localhost', '127.0.0.1'].includes(hostname) && ['4173', '5173', '5174', '5175', '5176', '5177', '5178', '5179'].includes(port);
+  if (isLocalFrontend) {
+    // Route through the Vite dev/preview proxy (see vite.config.ts).
+    return `${origin}/api`;
+  }
+
+  return `${origin}/api`;
+}
+
+const defaultApiBaseUrl = resolveDefaultApiBaseUrl();
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  defaultApiBaseUrl;
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
-  withCredentials: true,
+  // JWT auth uses Authorization header; cookies are not used for sessions.
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-let refreshPromise: Promise<string | null> | null = null;
+let activeApiBase = API_BASE_URL;
+let apiBaseResolutionPromise: Promise<string> | null = null;
+
+export function getActiveApiBase() {
+  return activeApiBase;
+}
+
+export async function resolveApiClientBase(force = false) {
+  if (!force && apiBaseResolutionPromise) {
+    return apiBaseResolutionPromise;
+  }
+
+  apiBaseResolutionPromise = (async () => {
+    const reachable = await findReachableApiBase(1200);
+    if (reachable) {
+      activeApiBase = reachable;
+      apiClient.defaults.baseURL = reachable;
+    }
+    return activeApiBase;
+  })();
+
+  try {
+    return await apiBaseResolutionPromise;
+  } finally {
+    apiBaseResolutionPromise = null;
+  }
+}
+
+function isNetworkFailure(error: AxiosError) {
+  return (
+    error.code === 'ERR_NETWORK' ||
+    error.code === 'ECONNABORTED' ||
+    error.message === 'Network Error' ||
+    error.response?.status === 0
+  );
+}
+
+let refreshPromise: Promise<'ok' | 'network' | 'auth'> | null = null;
 const offlineCachePrefix = 'nokta-api-cache:';
-const offlineCacheVersion = 'v1';
+const offlineCacheVersion = 'v3';
+const offlineCacheTtlMs = 24 * 60 * 60 * 1000;
+/** Paths that must never be served from offline cache (auth/finance/admin secrets). */
+const sensitiveCachePrefixes = [
+  '/finance',
+  '/payments',
+  '/payroll',
+  '/salaries',
+  '/expenses',
+  '/loans',
+  '/academy-financial-report',
+  '/auth/profile',
+  '/auth/captcha',
+  '/auth/refresh',
+  '/auth/login',
+  '/users',
+  '/audit',
+  '/roles',
+  '/permissions',
+  '/reports'
+];
 
 function isGetRequest(config?: AxiosRequestConfig) {
   return String(config?.method ?? 'get').toLowerCase() === 'get';
+}
+
+function isPublicApiRequest(url: string) {
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/captcha') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/forgot-password') ||
+    url.includes('/auth/reset-password') ||
+    url.includes('/messages/public-contact')
+  );
+}
+
+function isSensitiveCachePath(pathname: string) {
+  return sensitiveCachePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+export function clearOfflineApiCache() {
+  if (typeof window === 'undefined') return;
+  const keys: string[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (key?.startsWith(offlineCachePrefix)) keys.push(key);
+  }
+  keys.forEach((key) => window.localStorage.removeItem(key));
 }
 
 function buildOfflineCacheKey(config?: AxiosRequestConfig) {
@@ -30,7 +131,13 @@ function buildOfflineCacheKey(config?: AxiosRequestConfig) {
     return null;
   }
 
-  const url = new URL(config.url, config.baseURL || API_BASE_URL);
+  const url = new URL(config.url, config.baseURL || activeApiBase || API_BASE_URL);
+  if (isSensitiveCachePath(url.pathname.replace(/^\/api/, '') || url.pathname)) {
+    return null;
+  }
+
+  const user = getStoredUser<{ id?: string }>();
+  const userScope = user?.id ? `u:${user.id}` : 'anon';
   const params = new URLSearchParams(url.search);
 
   if (config.params && typeof config.params === 'object') {
@@ -44,7 +151,7 @@ function buildOfflineCacheKey(config?: AxiosRequestConfig) {
 
   params.sort();
   const query = params.toString();
-  return `${offlineCachePrefix}${offlineCacheVersion}:${url.pathname}${query ? `?${query}` : ''}`;
+  return `${offlineCachePrefix}${offlineCacheVersion}:${userScope}:${url.pathname}${query ? `?${query}` : ''}`;
 }
 
 function cacheGetResponse(response: AxiosResponse) {
@@ -66,6 +173,10 @@ function cacheGetResponse(response: AxiosResponse) {
 }
 
 function readCachedGetResponse(error: AxiosError) {
+  if (!isNetworkFailure(error)) {
+    return null;
+  }
+
   const config = error.config;
   const key = buildOfflineCacheKey(config);
   if (!key || !isGetRequest(config) || error.response?.status === 401 || error.response?.status === 403) {
@@ -78,12 +189,17 @@ function readCachedGetResponse(error: AxiosError) {
       return null;
     }
 
-    const cached = JSON.parse(raw) as { data: unknown; status?: number; statusText?: string };
+    const cached = JSON.parse(raw) as { data: unknown; status?: number; statusText?: string; cachedAt?: number };
+    if (cached.cachedAt && Date.now() - cached.cachedAt > offlineCacheTtlMs) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+
     return {
       data: cached.data,
       status: cached.status ?? 200,
       statusText: cached.statusText ?? 'OK (offline cache)',
-      headers: {},
+      headers: { 'x-offline-cache': '1' },
       config: config!,
       request: error.request
     } as AxiosResponse;
@@ -92,10 +208,18 @@ function readCachedGetResponse(error: AxiosError) {
   }
 }
 
-async function refreshAccessToken() {
+function forceLogoutToLogin() {
+  clearOfflineApiCache();
+  useAuthStore.getState().logout();
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login';
+  }
+}
+
+async function refreshAccessToken(): Promise<'ok' | 'network' | 'auth'> {
   const storedRefreshToken = getStoredAuthValue('refreshToken');
   if (!storedRefreshToken) {
-    return null;
+    return 'auth';
   }
 
   if (!refreshPromise) {
@@ -105,24 +229,28 @@ async function refreshAccessToken() {
         const payload = response.data?.data ?? {};
         const nextAccessToken = payload.tokens?.accessToken ?? payload.accessToken ?? null;
         const nextRefreshToken = payload.tokens?.refreshToken ?? payload.refreshToken ?? storedRefreshToken;
-        const nextUser = payload.user ?? null;
+        const nextUser = payload.user ?? useAuthStore.getState().user ?? getStoredUser();
 
-        persistAuthSession({
-          accessToken: nextAccessToken,
-          refreshToken: nextRefreshToken,
-          user: nextUser,
-          rememberMe: getCurrentAuthStorage() === window.localStorage || isRememberedSession()
-        });
+        if (!nextAccessToken) {
+          return 'auth' as const;
+        }
 
-        return nextAccessToken;
+        const rememberMe = getCurrentAuthStorage() === window.localStorage || isRememberedSession();
+        useAuthStore.getState().setAuth(nextUser, nextAccessToken, nextRefreshToken, rememberMe);
+        return 'ok' as const;
       })
-      .catch(() => {
+      .catch((error: AxiosError) => {
+        if (isNetworkFailure(error)) {
+          return 'network' as const;
+        }
+        clearOfflineApiCache();
         clearAuthSession();
-        return null;
+        useAuthStore.getState().logout();
+        return 'auth' as const;
       })
       .finally(() => {
         refreshPromise = null;
-      });
+      }) as Promise<'ok' | 'network' | 'auth'>;
   }
 
   return refreshPromise;
@@ -131,7 +259,8 @@ async function refreshAccessToken() {
 apiClient.interceptors.request.use(
   (config) => {
     const url = config.url ?? '';
-    if (!url.includes('/auth/login') && !url.includes('/auth/refresh')) {
+
+    if (!isPublicApiRequest(url)) {
       const token = getStoredAuthValue('accessToken');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -160,26 +289,47 @@ apiClient.interceptors.response.use(
       error.message = serverMessage;
     }
 
-    if (error.response?.status === 401 && !originalRequest?._retry && !requestUrl.includes('/auth/login') && !requestUrl.includes('/auth/refresh')) {
+    const isPublicRequest = isPublicApiRequest(requestUrl);
+
+    if (error.response?.status === 401 && !originalRequest?._retry && !isPublicRequest) {
       originalRequest._retry = true;
-      const nextAccessToken = await refreshAccessToken();
-      if (nextAccessToken) {
+      const refreshResult = await refreshAccessToken();
+      if (refreshResult === 'ok') {
+        const nextAccessToken = getStoredAuthValue('accessToken');
         originalRequest.headers = {
           ...(originalRequest.headers ?? {}),
           Authorization: `Bearer ${nextAccessToken}`
         };
         return apiClient(originalRequest);
       }
+      if (refreshResult === 'network') {
+        const cachedDuringNetwork = readCachedGetResponse(error);
+        if (cachedDuringNetwork) {
+          return cachedDuringNetwork;
+        }
+        return Promise.reject(error);
+      }
     }
 
-    if (error.response?.status === 401) {
-      clearAuthSession();
-      window.location.href = '/login';
+    if (error.response?.status === 401 && !isPublicRequest) {
+      forceLogoutToLogin();
     }
 
     const cachedResponse = readCachedGetResponse(error);
     if (cachedResponse) {
       return cachedResponse;
+    }
+
+    const retriableRequest = originalRequest as AxiosRequestConfig & { _networkRetry?: boolean };
+    if (isNetworkFailure(error) && retriableRequest && !retriableRequest._networkRetry) {
+      retriableRequest._networkRetry = true;
+      const reachable = await findReachableApiBase(1200);
+      if (reachable && reachable !== activeApiBase) {
+        activeApiBase = reachable;
+        apiClient.defaults.baseURL = reachable;
+        retriableRequest.baseURL = reachable;
+        return apiClient(retriableRequest);
+      }
     }
 
     return Promise.reject(error);
@@ -188,4 +338,3 @@ apiClient.interceptors.response.use(
 
 export const api = apiClient;
 export default apiClient;
-

@@ -1,0 +1,407 @@
+erDiagram
+  User {
+    ObjectId _id PK
+    string collection_users
+  }
+  SessionToken {
+    ObjectId _id PK
+    string collection_session_tokens
+  }
+  Role {
+    ObjectId _id PK
+    string collection_roles
+  }
+  Permission {
+    ObjectId _id PK
+    string collection_permissions
+  }
+  AuditLog {
+    ObjectId _id PK
+    string collection_audit_logs
+  }
+  Branch {
+    ObjectId _id PK
+    string collection_branches
+  }
+  Owner {
+    ObjectId _id PK
+    string collection_owners
+  }
+  Teacher {
+    ObjectId _id PK
+    string collection_teachers
+  }
+  Parent {
+    ObjectId _id PK
+    string collection_parents
+  }
+  Student {
+    ObjectId _id PK
+    string collection_students
+  }
+  Family {
+    ObjectId _id PK
+    string collection_families
+  }
+  FamilyLink {
+    ObjectId _id PK
+    string collection_family_links
+  }
+  Class {
+    ObjectId _id PK
+    string collection_classes
+  }
+  Subject {
+    ObjectId _id PK
+    string collection_subjects
+  }
+  Course {
+    ObjectId _id PK
+    string collection_courses
+  }
+  Curriculum {
+    ObjectId _id PK
+    string collection_curricula
+  }
+  Enrollment {
+    ObjectId _id PK
+    string collection_enrollments
+  }
+  Timetable {
+    ObjectId _id PK
+    string collection_timetable
+  }
+  LearningResource {
+    ObjectId _id PK
+    string collection_learning_resources
+  }
+  Attendance {
+    ObjectId _id PK
+    string collection_attendance
+  }
+  AttendancePolicy {
+    ObjectId _id PK
+    string collection_attendance_policies
+  }
+  Book {
+    ObjectId _id PK
+    string collection_books
+  }
+  StationerySale {
+    ObjectId _id PK
+    string collection_stationery_sales
+  }
+  Exam {
+    ObjectId _id PK
+    string collection_exams
+  }
+  Question {
+    ObjectId _id PK
+    string collection_questions
+  }
+  Result {
+    ObjectId _id PK
+    string collection_results
+  }
+  ExamResult {
+    ObjectId _id PK
+    string collection_exam_results
+  }
+  AIResultInsight {
+    ObjectId _id PK
+    string collection_ai_result_insights
+  }
+  AIClassExamInsight {
+    ObjectId _id PK
+    string collection_ai_class_exam_insights
+  }
+  EnterpriseTranscript {
+    ObjectId _id PK
+    string collection_enterprise_transcripts
+  }
+  EnterpriseOnlineExam {
+    ObjectId _id PK
+    string collection_enterprise_online_exams
+  }
+  EnterpriseExamAttempt {
+    ObjectId _id PK
+    string collection_enterprise_exam_attempts
+  }
+  EnterpriseAssignment {
+    ObjectId _id PK
+    string collection_enterprise_assignments
+  }
+  EnterpriseAssignmentSubmission {
+    ObjectId _id PK
+    string collection_enterprise_assignment_submissions
+  }
+  EnterpriseCertificate {
+    ObjectId _id PK
+    string collection_enterprise_certificates
+  }
+  Payment {
+    ObjectId _id PK
+    string collection_payments
+  }
+  Expense {
+    ObjectId _id PK
+    string collection_expenses
+  }
+  FinanceEntry {
+    ObjectId _id PK
+    string collection_finance_entries
+  }
+  Salary {
+    ObjectId _id PK
+    string collection_salaries
+  }
+  SalaryRecord {
+    ObjectId _id PK
+    string collection_salary_records
+  }
+  SalarySetting {
+    ObjectId _id PK
+    string collection_salary_settings
+  }
+  SalaryTransaction {
+    ObjectId _id PK
+    string collection_salarytransactions
+  }
+  TaxRule {
+    ObjectId _id PK
+    string collection_tax_rules
+  }
+  TaxPercentageSetting {
+    ObjectId _id PK
+    string collection_tax_percentage_settings
+  }
+  Message {
+    ObjectId _id PK
+    string collection_messages
+  }
+  StudentMessage {
+    ObjectId _id PK
+    string collection_student_messages
+  }
+  Notification {
+    ObjectId _id PK
+    string collection_notifications
+  }
+  Announcement {
+    ObjectId _id PK
+    string collection_announcements
+  }
+  Advertisement {
+    ObjectId _id PK
+    string collection_advertisements
+  }
+  QrContact {
+    ObjectId _id PK
+    string collection_qr_contacts
+  }
+  Report {
+    ObjectId _id PK
+    string collection_reports
+  }
+  LanguageSetting {
+    ObjectId _id PK
+    string collection_language_settings
+  }
+  EnterpriseBackup {
+    ObjectId _id PK
+    string collection_enterprise_backups
+  }
+  EnterpriseSecurityEvent {
+    ObjectId _id PK
+    string collection_enterprise_security_events
+  }
+
+  Branch o|--o{ User : "branchId?"
+  Family o|--o{ User : "familyId?"
+  Parent o|--o{ User : "parentProfileId?"
+  Owner o|--o{ User : "ownerProfileId?"
+  Class o|--o{ User : "classId?"
+  Subject o|--o{ User : "subjectId?"
+  User o|--o{ User : "assignedTeacherId?"
+  Subject }o--o{ User : "assignedSubjects[]"
+  Class }o--o{ User : "assignedClasses[]"
+  User ||--o{ SessionToken : "userId"
+  User o|--o{ SessionToken : "revokedBy?"
+  User ||--o{ AuditLog : "actor"
+  Branch o|--o{ AuditLog : "branchId?"
+  Owner o|--o{ Branch : "ownerId?"
+  User o|--o{ Branch : "managerId?"
+  User o|--o{ Branch : "deleteRequestedBy?"
+  User o|--o{ Branch : "ownerDeleteApprovedBy?"
+  User ||--o{ Owner : "userId UQ"
+  Branch }o--o{ Owner : "branchIds[]"
+  User ||--o{ Teacher : "userId UQ"
+  Branch o|--o{ Teacher : "branchId?"
+  Subject }o--o{ Teacher : "assignedSubjectIds[]"
+  Class }o--o{ Teacher : "assignedClassIds[]"
+  User ||--o{ Parent : "userId UQ"
+  Branch o|--o{ Parent : "branchId?"
+  Student }o--o{ Parent : "linkedStudentIds[]"
+  Branch o|--o{ Student : "branchId?"
+  Class ||--o{ Student : "classId"
+  Subject ||--o{ Student : "subjectId"
+  User ||--o{ Student : "teacherId"
+  Family ||--o{ Student : "familyId"
+  Parent o|--o{ Student : "parentProfileId?"
+  Student }o--o{ Family : "students[]"
+  Parent ||--o{ FamilyLink : "parentId"
+  Student ||--o{ FamilyLink : "studentId"
+  Subject o|--o{ Class : "subjectId?"
+  User o|--o{ Class : "teacherId?"
+  Branch o|--o{ Class : "branchId?"
+  Subject }o--o{ Class : "assignedSubjects[]"
+  User }o--o{ Class : "assignedTeachers[]"
+  Branch o|--o{ Subject : "branchId?"
+  Class ||--o{ Subject : "classId"
+  Class }o--o{ Subject : "classIds[]"
+  User o|--o{ Subject : "teacher?"
+  Branch o|--o{ Course : "branchId?"
+  Class o|--o{ Course : "linkedClassId?"
+  User o|--o{ Course : "instructor?"
+  User o|--o{ Course : "teacher?"
+  Subject }o--o{ Course : "subjects[]"
+  User o|--o{ Course : "createdBy?"
+  User o|--o{ Course : "updatedBy?"
+  Branch o|--o{ Curriculum : "branchId?"
+  Class o|--o{ Curriculum : "classId?"
+  Subject o|--o{ Curriculum : "subjectId?"
+  Student ||--o{ Enrollment : "studentId"
+  Class ||--o{ Enrollment : "classId"
+  Subject ||--o{ Enrollment : "subjectId"
+  User ||--o{ Enrollment : "teacherId"
+  Branch o|--o{ Enrollment : "branchId?"
+  Branch o|--o{ Timetable : "branchId?"
+  Class ||--o{ Timetable : "classId"
+  Subject o|--o{ Timetable : "subjectId?"
+  User ||--o{ Timetable : "teacherId"
+  Subject o|--o{ LearningResource : "subjectId?"
+  Class o|--o{ LearningResource : "classId?"
+  Branch o|--o{ LearningResource : "branchId?"
+  User o|--o{ LearningResource : "uploadedBy?"
+  Class ||--o{ Attendance : "classId"
+  User ||--o{ Attendance : "teacherId"
+  Student o|--o{ Attendance : "studentId?"
+  User o|--o{ Attendance : "userId?"
+  Timetable o|--o{ Attendance : "timetableId?"
+  Subject o|--o{ Attendance : "subjectId?"
+  Branch o|--o{ Attendance : "branchId?"
+  AttendancePolicy o|--o{ Attendance : "policyId?"
+  User o|--o{ Attendance : "markedBy?"
+  Branch o|--o{ AttendancePolicy : "branchId?"
+  Branch o|--o{ Book : "branchId?"
+  Branch o|--o{ StationerySale : "branchId?"
+  Book o|--o{ StationerySale : "bookId?"
+  User o|--o{ StationerySale : "studentId?"
+  User o|--o{ StationerySale : "soldBy?"
+  Branch o|--o{ Exam : "branchId?"
+  Subject ||--o{ Exam : "subject"
+  Class ||--o{ Exam : "class"
+  User ||--o{ Exam : "teacherId"
+  Exam ||--o{ Question : "examId"
+  Subject ||--o{ Question : "subjectId"
+  User ||--o{ Result : "student"
+  Exam ||--o{ Result : "exam"
+  Class o|--o{ Result : "classId?"
+  Subject o|--o{ Result : "subjectId?"
+  User o|--o{ Result : "teacherId?"
+  User o|--o{ Result : "gradedBy?"
+  Student ||--o{ ExamResult : "studentId"
+  Exam ||--o{ ExamResult : "examId"
+  Subject ||--o{ ExamResult : "subjectId"
+  User o|--o{ ExamResult : "publishedBy?"
+  User ||--o{ AIResultInsight : "studentId"
+  Exam ||--o{ AIResultInsight : "examId"
+  Class ||--o{ AIResultInsight : "classId"
+  Branch o|--o{ AIResultInsight : "branchId?"
+  Subject o|--o{ AIResultInsight : "subjectId?"
+  Result o|--o{ AIResultInsight : "resultId?"
+  Exam ||--o{ AIClassExamInsight : "examId"
+  Class ||--o{ AIClassExamInsight : "classId"
+  Branch o|--o{ AIClassExamInsight : "branchId?"
+  Branch o|--o{ EnterpriseTranscript : "branchId?"
+  Student ||--o{ EnterpriseTranscript : "studentId"
+  Subject }o--o{ EnterpriseTranscript : "subjects[].subjectId"
+  Branch o|--o{ EnterpriseOnlineExam : "branchId?"
+  Class ||--o{ EnterpriseOnlineExam : "classId"
+  Subject ||--o{ EnterpriseOnlineExam : "subjectId"
+  User ||--o{ EnterpriseOnlineExam : "teacherId"
+  EnterpriseOnlineExam ||--o{ EnterpriseExamAttempt : "examId"
+  Student ||--o{ EnterpriseExamAttempt : "studentId"
+  Branch o|--o{ EnterpriseAssignment : "branchId?"
+  Class ||--o{ EnterpriseAssignment : "classId"
+  Subject ||--o{ EnterpriseAssignment : "subjectId"
+  User ||--o{ EnterpriseAssignment : "teacherId"
+  EnterpriseAssignment ||--o{ EnterpriseAssignmentSubmission : "assignmentId"
+  Student ||--o{ EnterpriseAssignmentSubmission : "studentId"
+  User o|--o{ EnterpriseAssignmentSubmission : "gradedBy?"
+  Branch o|--o{ EnterpriseCertificate : "branchId?"
+  Student ||--o{ EnterpriseCertificate : "studentId"
+  User o|--o{ EnterpriseCertificate : "signedBy?"
+  Student o|--o{ Payment : "studentId?"
+  User o|--o{ Payment : "payeeUserId?"
+  SalaryRecord }o--o{ Payment : "salaryRecordIds[]"
+  Branch o|--o{ Payment : "branchId?"
+  Enrollment o|--o{ Payment : "enrollmentId?"
+  Class o|--o{ Payment : "classId?"
+  Subject o|--o{ Payment : "subjectId?"
+  User o|--o{ Payment : "teacherId?"
+  User o|--o{ Payment : "collectedBy?"
+  Branch o|--o{ Expense : "branchId?"
+  User o|--o{ Expense : "createdBy?"
+  Branch o|--o{ FinanceEntry : "branchId?"
+  User o|--o{ FinanceEntry : "createdBy?"
+  User ||--o{ Salary : "employeeId"
+  Branch o|--o{ Salary : "branchId?"
+  User o|--o{ Salary : "paidBy?"
+  User o|--o{ Salary : "approvedBy?"
+  User ||--o{ SalaryRecord : "userId"
+  Branch o|--o{ SalaryRecord : "branchId?"
+  User o|--o{ SalaryRecord : "createdBy?"
+  User ||--o{ SalarySetting : "userId"
+  Branch o|--o{ SalarySetting : "branchId?"
+  User o|--o{ SalarySetting : "createdBy?"
+  User o|--o{ SalarySetting : "updatedBy?"
+  User ||--o{ SalaryTransaction : "teacherId"
+  Student ||--o{ SalaryTransaction : "studentId"
+  Course o|--o{ SalaryTransaction : "courseId?"
+  Subject ||--o{ SalaryTransaction : "subjectId"
+  Class ||--o{ SalaryTransaction : "classId"
+  Branch o|--o{ SalaryTransaction : "branchId?"
+  Payment o|--o{ SalaryTransaction : "paymentId?"
+  User o|--o{ SalaryTransaction : "createdBy?"
+  User o|--o{ SalaryTransaction : "deletedBy?"
+  Branch o|--o{ TaxPercentageSetting : "branchId?"
+  User o|--o{ TaxPercentageSetting : "createdBy?"
+  User o|--o{ TaxPercentageSetting : "updatedBy?"
+  User o|--o{ Message : "senderId?"
+  User o|--o{ Message : "recipientId?"
+  Student o|--o{ Message : "studentId?"
+  User o|--o{ Message : "teacherId?"
+  Branch o|--o{ Message : "branchId?"
+  Message o|--o{ Message : "parentMessageId?"
+  Message o|--o{ Message : "threadId?"
+  Branch o|--o{ StudentMessage : "branchId?"
+  User ||--o{ StudentMessage : "studentId"
+  User ||--o{ StudentMessage : "teacherId"
+  Branch o|--o{ Notification : "branchId?"
+  Class o|--o{ Notification : "classId?"
+  Subject o|--o{ Notification : "subjectId?"
+  User o|--o{ Notification : "teacherId?"
+  User }o--o{ Notification : "recipientIds[]"
+  User }o--o{ Notification : "readBy[]"
+  Branch o|--o{ Announcement : "branchId?"
+  User o|--o{ Announcement : "publishedBy?"
+  Branch o|--o{ Advertisement : "branchId?"
+  User o|--o{ QrContact : "userId?"
+  Branch o|--o{ QrContact : "branchId?"
+  Branch o|--o{ Report : "branchId?"
+  User o|--o{ Report : "generatedBy?"
+  User o|--o{ LanguageSetting : "userId?"
+  Branch o|--o{ LanguageSetting : "branchId?"
+  User o|--o{ EnterpriseBackup : "requestedBy?"
+  User o|--o{ EnterpriseSecurityEvent : "userId?"

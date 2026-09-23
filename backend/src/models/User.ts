@@ -34,7 +34,7 @@ const userSchema = createBaseSchema(
     profileImage: { type: String, trim: true, default: '' },
     password: { type: String, required: true, select: false },
     role: { type: String, required: true, enum: supportedRoles, index: true },
-    status: { type: String, enum: ['active', 'inactive', 'locked', 'suspended', 'pending_verification'], default: 'active', index: true },
+    status: { type: String, enum: ['active', 'inactive', 'locked', 'suspended', 'pending_verification', 'blocked', 'expired'], default: 'active', index: true },
     permissions: {
       type: Map,
       of: [String],
@@ -55,9 +55,9 @@ const userSchema = createBaseSchema(
     address: { type: String, trim: true, default: '' },
     gender: { type: String, enum: ['male', 'female', 'other'], default: 'other', index: true },
     joinDate: { type: Date, default: Date.now },
-    salaryType: { type: String, enum: ['fixed', 'percentage'], default: 'fixed' },
+    salaryType: { type: String, enum: ['fixed', 'percentage', 'fixed_plus_percentage'], default: 'fixed' },
     fixedSalary: { type: Number, default: 0 },
-    percentageRate: { type: Number, default: 35 },
+    percentageRate: { type: Number, default: 0 },
     customPercentage: { type: Number, default: 0 },
     walletBalance: { type: Number, default: 0 },
     totalStudents: { type: Number, default: 0 },
@@ -76,6 +76,7 @@ const userSchema = createBaseSchema(
     passwordChangedAt: { type: Date, default: Date.now },
     passwordHistory: { type: [passwordHistorySchema], default: [] },
     mustChangePassword: { type: Boolean, default: true },
+    authVersion: { type: Number, default: 0 },
     failedLoginAttempts: { type: Number, default: 0 },
     lockedUntil: { type: Date, default: null },
     lastLoginAt: { type: Date, default: null },
@@ -92,6 +93,13 @@ userSchema.pre('validate', function normalizeName(this: any, next) {
   if ((!this.name || !String(this.name).trim()) && (firstName || lastName)) {
     this.name = `${firstName} ${lastName}`.trim();
   }
+
+  if (Array.isArray(this.passwordHistory)) {
+    this.passwordHistory = this.passwordHistory
+      .filter((entry: any) => typeof entry?.hash === 'string' && entry.hash.trim())
+      .slice(0, 5);
+  }
+
   next();
 });
 

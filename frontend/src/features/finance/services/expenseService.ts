@@ -17,6 +17,13 @@ export interface ExpenseRecord {
 }
 
 export const expenseService = {
-  summary: () => api.get('/expenses/summary').then((res) => res.data.data as ExpenseSummary),
-  list: () => api.get('/expenses', { params: { limit: 100 } }).then((res) => res.data.data as ExpenseRecord[])
+  summary: (params?: Record<string, unknown>) => api.get('/expenses/summary', { params }).then((res) => res.data.data as ExpenseSummary),
+  list: (params?: Record<string, unknown>) =>
+    api.get('/expenses', { params: { limit: 100, ...params } }).then((res) => res.data.data as ExpenseRecord[]),
+  listPaged: (params?: Record<string, unknown>) =>
+    api.get('/expenses', { params: { limit: 20, ...params } }).then((res) => ({
+      items: (res.data.data ?? []) as ExpenseRecord[],
+      pagination: res.data.pagination ?? { page: 1, limit: 20, total: 0 }
+    })),
+  create: (payload: Omit<ExpenseRecord, '_id'>) => api.post('/expenses', payload).then((res) => res.data.data as ExpenseRecord)
 };

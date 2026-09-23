@@ -67,6 +67,24 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+export const captchaLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 40,
+  message: { success: false, message: 'Too many captcha requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: resolveRequestIdentity
+});
+
+export const publicContactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: { success: false, message: 'Too many contact requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: resolveRequestIdentity
+});
+
 export const teacherCreateLimiter = rateLimit({
   windowMs: config.rateLimitWindow * 60 * 1000,
   max: 10,

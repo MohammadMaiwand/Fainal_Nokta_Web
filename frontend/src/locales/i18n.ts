@@ -33,18 +33,67 @@ export const languageMeta = {
 
 export type AppLanguage = keyof typeof languageMeta;
 
+const FONT_ENGLISH = "'Inter', Arial, sans-serif";
+const FONT_RTL = "'Vazirmatn', Tahoma, Arial, sans-serif";
+
+export function normalizeAppLanguage(locale?: string) {
+  return String(locale || 'en')
+    .toLowerCase()
+    .split('-')[0];
+}
+
+export function isDariLanguage(language: string) {
+  return language === 'fa' || language === 'prs' || language === 'dr';
+}
+
+export function isPashtoLanguage(language: string) {
+  return language === 'ps';
+}
+
+export function isRtlLanguage(language: string) {
+  return isDariLanguage(language) || isPashtoLanguage(language);
+}
+
 export function getLanguageDirection(language?: string) {
-  return languageMeta[(language as AppLanguage) || 'en']?.dir ?? 'ltr';
+  const normalized = normalizeAppLanguage(language);
+  return isRtlLanguage(normalized) ? 'rtl' : 'ltr';
 }
 
-export function applyDocumentLanguage(language?: string) {
-  const normalized = (language as AppLanguage) || 'en';
-  document.documentElement.dir = getLanguageDirection(normalized);
-  document.documentElement.lang = normalized;
+/**
+ * Syncs document lang, dir, and global app font with the active locale.
+ * Safe to call on startup, language change, and route hydration.
+ */
+export function applyDocumentLanguage(locale?: string) {
+  if (typeof document === 'undefined') return;
+
+  const normalizedLanguage = normalizeAppLanguage(locale);
+  const isRtl = isRtlLanguage(normalizedLanguage);
+  const direction = isRtl ? 'rtl' : 'ltr';
+  const fontFamily = isRtl ? FONT_RTL : FONT_ENGLISH;
+
+  const root = document.documentElement;
+  root.lang = normalizedLanguage;
+  root.dir = direction;
+  root.dataset.lang = normalizedLanguage;
+  root.style.setProperty('--app-font-family', fontFamily);
+
+  if (document.body) {
+    document.body.dir = direction;
+  }
 }
 
-const defaultLanguage = ((localStorage.getItem('lang') as AppLanguage | null) || 'en') as AppLanguage;
-applyDocumentLanguage(defaultLanguage);
+const storedLanguage =
+  (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'en';
+const defaultLanguage = (normalizeAppLanguage(storedLanguage) as AppLanguage) || 'en';
+const resolvedStartupLanguage = (['en', 'fa', 'ps'].includes(defaultLanguage)
+  ? defaultLanguage
+  : isDariLanguage(defaultLanguage)
+    ? 'fa'
+    : isPashtoLanguage(defaultLanguage)
+      ? 'ps'
+      : 'en') as AppLanguage;
+
+applyDocumentLanguage(resolvedStartupLanguage);
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -52,7 +101,7 @@ i18n.use(initReactI18next).init({
     fa: { translation: flattenLocale(localeMessages.fa as LocaleTree) },
     ps: { translation: flattenLocale(localeMessages.ps as LocaleTree) }
   },
-  lng: defaultLanguage,
+  lng: resolvedStartupLanguage,
   fallbackLng: 'en',
   supportedLngs: ['en', 'fa', 'ps'],
   defaultNS: 'translation',

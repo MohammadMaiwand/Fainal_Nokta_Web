@@ -1,0 +1,12 @@
+{
+  "manage_portal_account": "د اکونټ / پټنوم مدیریت",
+  "portal_updated": "د کورنۍ اکونټ په بریالیتوب سره تازه شو.",
+  "portal_update_failed": "د کورنۍ اکونټ تازه کول ناکام شول.",
+  "password_required_create": "د کورنۍ اکونټ جوړولو لپاره پټنوم اړین دی.",
+  "password_min": "پټنوم باید لږ تر لږه ۶ توري وي.",
+  "password_optional_hint": "که نه غواړئ بدل یې کړئ خالی پرېږدئ",
+  "sections_required": "لږ تر لږه یوه برخه وټاکئ.",
+  "portal_sections": "د لاسرسي برخې",
+  "portal_sections_hint": "یوازې نښه شوې برخې په سایدبار کې ښکاري.",
+  "no_portal_account": "تر اوسه د ننوتلو اکونټ نشته"
+}

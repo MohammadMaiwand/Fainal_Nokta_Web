@@ -7,7 +7,7 @@ const teacherSchema = createBaseSchema(
     branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', default: null, index: true },
     teacherCode: { type: String, required: true, trim: true, unique: true },
     gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
-    salaryType: { type: String, enum: ['fixed', 'percentage'], default: 'fixed' },
+    salaryType: { type: String, enum: ['fixed', 'percentage', 'fixed_plus_percentage'], default: 'fixed' },
     fixedSalary: { type: Number, default: 0 },
     percentageRate: { type: Number, default: 0 },
     assignedSubjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],

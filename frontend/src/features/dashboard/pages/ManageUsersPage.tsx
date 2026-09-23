@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, CheckCircle2, ArrowUpDown } from 'lucide-react';
 import { PageHeader, SearchFilterBar, DataTable, FormModal } from '@/shared/components/Common';
+import { ListPagination } from '@/shared/filters/ListPagination';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -69,7 +70,8 @@ export function ManageUsersPage() {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<ListSortField>('name');
   const [sortDirection, setSortDirection] = useState<ListSortDirection>('asc');
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
@@ -79,14 +81,25 @@ export function ManageUsersPage() {
   const user = useAuthStore((state) => state.user);
   const debouncedSearch = useDebounce(search, 300);
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const templateQuery = useQuery<ApiResponse<PermissionTemplateResponse>>({
     queryKey: ['permissionsTemplate'],
     queryFn: userService.getPermissionTemplate
   });
 
-  const usersQuery = useQuery<ApiResponse<UserRecord[]>>({
-    queryKey: ['users', page, debouncedSearch],
-    queryFn: () => userService.list({ page, limit: 20, search: debouncedSearch })
+  const usersQuery = useQuery({
+    queryKey: ['users', page, pageSize, debouncedSearch, sortField, sortDirection],
+    queryFn: () =>
+      userService.list({
+        page,
+        limit: pageSize,
+        search: debouncedSearch,
+        sortBy: sortField,
+        sortOrder: sortDirection
+      })
   });
 
   const createUserMutation = useMutation({
@@ -108,7 +121,13 @@ export function ManageUsersPage() {
     }
   });
 
-  const users = usersQuery.data?.data ?? [];
+  const users = (usersQuery.data?.data ?? []) as UserRecord[];
+  const pagination = (usersQuery.data?.pagination ?? { page, limit: pageSize, total: users.length }) as {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages?: number;
+  };
   const sortedUsers = useMemo(() => sortCollection(users, sortField, sortDirection), [sortDirection, sortField, users]);
   const template = templateQuery.data?.data;
   const sortOptions = useMemo(
@@ -272,6 +291,14 @@ export function ManageUsersPage() {
             }
           ]}
         />
+        <ListPagination
+          meta={pagination}
+          onPageChange={setPage}
+          onLimitChange={(limit) => {
+            setPageSize(limit);
+            setPage(1);
+          }}
+        />
       </Card>
 
       <FormModal
@@ -309,11 +336,9 @@ export function ManageUsersPage() {
               value={newUser.password}
               onChange={(event) => setNewUser({ ...newUser, password: event.target.value })}
               placeholder={t('dashboard.password')}
-              minLength={4}
-              maxLength={32}
               required
             />
-            <p className="mt-2 text-xs text-slate-400">{t('auth.password_length_hint', { defaultValue: 'Password must be 4 to 32 characters.' })}</p>
+            <p className="mt-2 text-xs text-slate-400">{t('auth.password_length_hint', { defaultValue: 'Any password is accepted.' })}</p>
           </div>
           <label className="block text-sm font-semibold text-slate-200">{t('dashboard.role')}</label>
           <select

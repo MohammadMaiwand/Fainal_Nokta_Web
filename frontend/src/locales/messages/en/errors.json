@@ -5,5 +5,10 @@
   "no_records_found": "No records found.",
   "unable_retrieve_profile": "Unable to retrieve profile.",
   "login_error": "Login failed. Check your credentials.",
-  "class_code_exists": "Class code already exists. Please try again."
+  "class_code_exists": "Class code already exists. Please try again.",
+  "invalid_afghan_phone": "Phone must be 10 digits and start with 070, 078, 079, 072, 077, or 074.",
+  "afghan_phone_hint": "Only Afghan numbers: 070, 078, 079, 072, 077, 074 (10 digits).",
+  "invalid_person_name": "Name must contain only letters and cannot include numbers.",
+  "person_name_hint": "Names cannot include numbers or codes.",
+  "invalid_jalali_date": "Date must be in Hijri Shamsi format, for example 1405/2/1."
 }

@@ -1,0 +1,27 @@
+﻿py : Matplotlib is building the font cache; this may take a moment.
+At C:\Users\Maihan\AppData\Local\Temp\ps-script-c2e95b06-1b13-444f-8e95-30cd9d32613c.ps1:111 char:32
++ ... NG='utf-8'; py "F:\Bcak_End_update_file-main\Nokta_V7 - Copy\scripts\ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Matplotlib is b... take a moment.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+wrote fig_3_1_proto1_dashboard.png
+wrote fig_3_2_proto1_students.png
+wrote fig_3_3_proto1_attendance_exam.png
+wrote fig_3_4_proto1_finance.png
+wrote fig_3_5_proto2_ai_exam.png
+wrote fig_3_6_proto2_meet_attendance.png
+wrote fig_3_7_proto2_survey_impact.png
+wrote fig_3_8_proto3_tax_dashboard.png
+wrote fig_3_9_proto3_quarterly.png
+wrote fig_3_10_proto3_annual.png
+wrote fig_3_11_proto3_payroll_tax.png
+use case ok
+chart fig_4_1_respondent_role.png
+pie fig_4_2_academy_maturity.png
+chart fig_4_3_current_tools.png
+chart fig_4_4_feature_need.png
+chart fig_4_5_priority.png
+chart fig_4_6_impact.png
+pie fig_4_7_acceptance.png
+ASSETS_DIR F:\Bcak_End_update_file-main\Nokta_V7 - Copy\┘à┘ê┘å┘ê┌»╪▒╪º┘ü\_uplm_assets

@@ -1,0 +1,1769 @@
+
+===== PAGE 1 =====
+Kabul University
+Faculty of Computer Science
+Software Engineering Department
+Design and Implementation of a Medical
+Exit Exam Preparation Mobile Application
+A Project Submitted in Partial Fulfillment
+of the Requirements for the Degree of
+Bachelor of Science in Software Engineering
+By
+Aref Sediqi, P26000174
+Azizullah Yosufi, P07003757
+Najeebullah Karimi, P01056335
+Supervisor: Associate Professor Abdul Wahid Samadzai
+July 2026
+
+
+===== PAGE 2 =====
+
+
+===== PAGE 3 =====
+
+
+===== PAGE 4 =====
+
+
+===== PAGE 5 =====
+
+
+===== PAGE 6 =====
+
+
+===== PAGE 7 =====
+APPROVAL PAGE
+This project report titled “Design and Implementation of a Medical Exit Exam
+Preparation Mobile Application” is hereby approved as a satisfactory report in
+partial fulfillment of the requirements for the Bachelor of Science in Software
+Engineering.
+Role
+Name
+Signature
+Date
+Project Supervisor
+Associate Professor
+Abdul Wahid
+Samadzai
+Head of
+Department
+Assistant Professor
+Mohammad Salim
+Hamdard
+Dean of Faculty
+Assistant Professor
+Mohammad Zafar
+Shafaq
+i
+
+
+===== PAGE 8 =====
+DECLARATION OF ORIGINALITY
+We, Aref Sediqi, P26000174; Azizullah Yosufi, P07003757; and Najeebullah
+Karimi, P01056335, declare that this final year project report titled “Design
+and Implementation of a Medical Exit Exam Preparation Mobile Application”
+is our original work. All sources, references, and quoted materials have been
+duly acknowledged and cited according to APA standards.
+This work has not been previously submitted, in whole or in part, for any other
+degree or diploma at Kabul University or any other institution.
+Name
+Signature
+Date
+Aref Sediqi
+Azizullah Yosufi
+Najeebullah Karimi
+ii
+
+
+===== PAGE 9 =====
+ACKNOWLEDGMENTS
+First and foremost, we thank Allah (SWT) for granting us the strength, knowledge,
+and opportunity to complete this project. We would then like to express our
+sincere appreciation to our project supervisor, Associate Professor Abdul
+Wahid Samadzai, for his guidance, review, and support throughout the research,
+development, and documentation of this project. His direction helped us refine
+the project objectives, improve the system, and complete this thesis.
+We are also grateful to the leadership of the Faculty of Computer Science,
+particularly the Dean of Faculty, Assistant Professor Mohammad Zafar Shafaq,
+and the Head of Department, Assistant Professor Mohammad Salim Hamdard,
+for their academic support and for providing the environment in which this
+capstone project was carried out. We further thank the faculty members and
+staff of the Software Engineering Department for the knowledge, advice, and
+assistance they provided during our studies.
+Our appreciation also goes to the medical graduates and final-year students who
+participated in the requirements elicitation questionnaire. Their responses
+provided valuable insight into the preparation needs of Afghan Medical
+Exit Exam candidates. We also thank the users and fellow developers who
+participated in the prototype focus-group reviews and offered practical feedback
+on the mobile application and admin panel.
+We acknowledge the cooperation, effort, and shared responsibility of every
+member of the project team throughout the design, implementation, testing, and
+documentation of Exit 360. Finally, we are deeply thankful to our families and
+friends for their patience, encouragement, and support during the completion of
+this project.
+iii
+
+
+===== PAGE 10 =====
+ABSTRACT
+Write 200–300 words here: Problem, Methodology, Results, Conclusion
+Keywords: [Keyword1, Keyword2, Keyword3, Keyword4, Keyword5]
+iv
+
+
+===== PAGE 11 =====
+TABLE OF CONTENTS
+CHAPTER 1:
+INTRODUCTION
+1
+1.1
+Background . . . . . . . . . . . . . . . . . . . . . . . . . . .
+1
+1.2
+Problem Statement
+. . . . . . . . . . . . . . . . . . . . . . .
+3
+1.3
+Objectives . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4
+1.3.1
+Main Objective . . . . . . . . . . . . . . . . . . . . .
+5
+1.3.2
+Sub Objectives . . . . . . . . . . . . . . . . . . . . .
+5
+1.4
+Research Questions . . . . . . . . . . . . . . . . . . . . . . .
+5
+1.4.1
+Main Research Question . . . . . . . . . . . . . . . .
+5
+1.4.2
+Sub Research Questions
+. . . . . . . . . . . . . . . .
+5
+1.5
+Scope and Limitations
+. . . . . . . . . . . . . . . . . . . . .
+6
+1.5.1
+Scope (Inclusions) . . . . . . . . . . . . . . . . . . .
+6
+1.5.2
+Limitations (Exclusions) . . . . . . . . . . . . . . . .
+7
+1.6
+Significance of the Project
+. . . . . . . . . . . . . . . . . . .
+7
+1.7
+Research Methodology . . . . . . . . . . . . . . . . . . . . .
+9
+1.8
+Development Methodology . . . . . . . . . . . . . . . . . . .
+9
+1.9
+Outcomes . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+10
+1.10 Organization of the Report . . . . . . . . . . . . . . . . . . .
+11
+CHAPTER 2:
+LITERATURE REVIEW
+13
+2.1
+Related Work and Existing Systems
+. . . . . . . . . . . . . .
+13
+2.1.1
+Local Medical Exam Preparation Applications
+. . . .
+13
+2.1.2
+International Medical Licensing Exam Preparation
+Systems . . . . . . . . . . . . . . . . . . . . . . . . .
+15
+2.2
+Recent Trends and Technologies . . . . . . . . . . . . . . . .
+21
+2.3
+Literature Review Synthesis
+. . . . . . . . . . . . . . . . . .
+24
+v
+
+
+===== PAGE 12 =====
+TABLE OF CONTENTS
+CHAPTER 3:
+METHODOLOGY
+27
+3.1
+Research Methodology . . . . . . . . . . . . . . . . . . . . .
+27
+3.1.1
+Requirements Elicitation . . . . . . . . . . . . . . . .
+27
+3.1.2
+Population and Sampling . . . . . . . . . . . . . . . .
+28
+3.1.3
+Data Collection . . . . . . . . . . . . . . . . . . . . .
+31
+3.1.4
+Data Analysis and Presentation . . . . . . . . . . . . .
+33
+3.1.5
+Functional Requirements . . . . . . . . . . . . . . . .
+33
+3.1.6
+Non-Functional Requirements . . . . . . . . . . . . .
+36
+3.1.7
+Data Requirements . . . . . . . . . . . . . . . . . . .
+37
+3.2
+Development Methodology . . . . . . . . . . . . . . . . . . .
+39
+3.2.1
+Agile Development Approach
+. . . . . . . . . . . . .
+39
+3.2.2
+Scrum-Based Project Organization . . . . . . . . . . .
+40
+3.2.3
+Development Iterations . . . . . . . . . . . . . . . . .
+41
+3.2.4
+Prototype Development and User Review . . . . . . .
+41
+3.3
+System Design
+. . . . . . . . . . . . . . . . . . . . . . . . .
+57
+3.3.1
+Use Case Model
+. . . . . . . . . . . . . . . . . . . .
+57
+3.3.2
+Sequence Diagrams . . . . . . . . . . . . . . . . . . .
+58
+3.3.3
+Architectural Design . . . . . . . . . . . . . . . . . .
+64
+3.3.4
+Database Design . . . . . . . . . . . . . . . . . . . .
+67
+3.4
+Implementation . . . . . . . . . . . . . . . . . . . . . . . . .
+70
+3.4.1
+Development Environment . . . . . . . . . . . . . . .
+70
+3.4.2
+Implementation Phases . . . . . . . . . . . . . . . . .
+73
+3.4.3
+Key Modules Implemented . . . . . . . . . . . . . . .
+74
+3.4.4
+Challenges and Solutions . . . . . . . . . . . . . . . .
+75
+3.5
+Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+76
+3.5.1
+Unit Testing . . . . . . . . . . . . . . . . . . . . . . .
+77
+vi
+
+
+===== PAGE 13 =====
+TABLE OF CONTENTS
+3.5.2
+Integration Testing . . . . . . . . . . . . . . . . . . .
+85
+3.5.3
+User Acceptance Testing . . . . . . . . . . . . . . . .
+85
+CHAPTER 4:
+RESULTS
+87
+4.1
+Questionnaire Results . . . . . . . . . . . . . . . . . . . . . .
+87
+4.1.1
+Respondent Profile . . . . . . . . . . . . . . . . . . .
+87
+4.1.2
+Current Preparation and Access
+. . . . . . . . . . . .
+89
+4.1.3
+Feature Interest and Priorities
+. . . . . . . . . . . . .
+92
+4.1.4
+Perceived Impact . . . . . . . . . . . . . . . . . . . .
+94
+4.1.5
+Summary of Findings . . . . . . . . . . . . . . . . . .
+95
+CHAPTER 5:
+DISCUSSION
+97
+5.1
+Main Findings . . . . . . . . . . . . . . . . . . . . . . . . . .
+97
+5.2
+Relation to Objectives and Research Questions . . . . . . . . .
+98
+5.3
+Relation to Literature and Existing Systems
+. . . . . . . . . .
+99
+5.4
+Practical Implications of Exit 360
+. . . . . . . . . . . . . . . 100
+5.5
+Limitations of the Findings and System
+. . . . . . . . . . . . 101
+CHAPTER 6:
+CONCLUSION AND FUTURE WORK
+103
+6.1
+Summary of Work Done
+. . . . . . . . . . . . . . . . . . . . 103
+6.2
+Key Contributions . . . . . . . . . . . . . . . . . . . . . . . . 104
+6.3
+Achievement of Objectives . . . . . . . . . . . . . . . . . . . 104
+6.4
+Future Enhancements . . . . . . . . . . . . . . . . . . . . . . 106
+REFERENCES
+109
+APPENDIX A:
+QUESTIONNAIRES
+113
+A.1
+Requirements Elicitation Questionnaire
+. . . . . . . . . . . . 113
+vii
+
+
+===== PAGE 14 =====
+TABLE OF CONTENTS
+APPENDIX B:
+SOURCE CODE REPOSITORY
+117
+APPENDIX C:
+RAW TEST DATA
+119
+APPENDIX D:
+USER MANUAL
+121
+viii
+
+
+===== PAGE 15 =====
+LIST OF FIGURES
+Figure 3.1:
+Prototype 1 practice subject selection and test
+configuration screens . . . . . . . . . . . . . . . . . .
+43
+Figure 3.2:
+Prototype 1 practice test taking and test result screens .
+44
+Figure 3.3:
+Prototype 1 practice history and review screens . . . .
+45
+Figure 3.4:
+Prototype 1 practice statistics screen . . . . . . . . . .
+46
+Figure 3.5:
+Prototype 2 authentication and competition home screens 49
+Figure 3.6:
+Prototype 2 weekly test and leaderboard screens . . . .
+50
+Figure 3.7:
+Prototype 2 friends and challenge result screens . . . .
+51
+Figure 3.8:
+Prototype 3 admin dashboard page . . . . . . . . . . .
+54
+Figure 3.9:
+Prototype 3 admin weekly tests page . . . . . . . . . .
+55
+Figure 3.10: Prototype 3 weekly test creation modal dialog . . . . .
+56
+Figure 3.11: Prototype 3 admin challenges page . . . . . . . . . . .
+57
+Figure 3.12: Use Case Diagram . . . . . . . . . . . . . . . . . . .
+58
+Figure 3.13: Sequence Diagram for Practice Test Flow . . . . . . .
+59
+Figure 3.14: Sequence Diagram for Challenge Test Flow . . . . . .
+61
+Figure 3.15: Sequence Diagram for Weekly Test Flow
+. . . . . . .
+63
+Figure 3.16: Architecture Diagram . . . . . . . . . . . . . . . . . .
+66
+Figure 3.17: Local SQLite Entity-Relationship Diagram . . . . . .
+68
+Figure 3.18: Local SQLite Relational Schema . . . . . . . . . . . .
+69
+Figure 4.1:
+Respondent study level . . . . . . . . . . . . . . . . .
+87
+Figure 4.2:
+Exit Exam status of respondents . . . . . . . . . . . .
+88
+Figure 4.3:
+Current Exit Exam preparation methods . . . . . . . .
+89
+Figure 4.4:
+Frequency of mock or practice tests . . . . . . . . . .
+90
+Figure 4.5:
+Ease of accessing practice tests on demand
+. . . . . .
+90
+ix
+
+
+===== PAGE 16 =====
+LIST OF FIGURES
+Figure 4.6:
+Internet access for studying . . . . . . . . . . . . . . .
+91
+Figure 4.7:
+Reliability of internet connection . . . . . . . . . . . .
+91
+Figure 4.8:
+Importance of offline practice-test access
+. . . . . . .
+92
+Figure 4.9:
+Prior use of Exit Exam or medical exam preparation apps 92
+Figure 4.10: Mean usefulness rating of proposed Exit 360 features .
+93
+Figure 4.11: Top-three feature priority ranking
+. . . . . . . . . . .
+93
+Figure 4.12: Likelihood of using the proposed Exit Exam preparation
+app
+. . . . . . . . . . . . . . . . . . . . . . . . . . .
+94
+Figure 4.13: Mean agreement with expected app impact
+. . . . . .
+95
+x
+
+
+===== PAGE 17 =====
+LIST OF TABLES
+Table 3.1:
+Technology Stack . . . . . . . . . . . . . . . . . . . .
+71
+Table 3.2:
+Core Practice and Scoring Unit Test Cases . . . . . . .
+77
+Table 3.3:
+Authentication and Online Workflow Unit Test Cases
+.
+79
+Table 3.4:
+Test-Taking and Result Interface Unit Test Cases . . . .
+81
+Table 3.5:
+Social, Competition, and General Interface Unit Test Cases 83
+Table 6.1:
+Objective Achievement Status . . . . . . . . . . . . . . 105
+xi
+
+
+===== PAGE 18 =====
+
+
+===== PAGE 19 =====
+CHAPTER 1: INTRODUCTION
+This chapter introduces the project and the context in which it was
+developed.
+It begins by explaining the Afghan Medical Exit Exam and
+the preparation challenges faced by its candidates, then presents the problem
+statement, objectives, corresponding research questions, scope, limitations, and
+significance of the project. It also summarizes the research and development
+methodologies, states the project outcomes, and outlines the organization of
+the thesis. Together, these sections establish the purpose, direction, boundaries,
+and expected contribution of an offline-capable and exam-oriented mobile
+preparation application.
+1.1
+Background
+In Afghanistan, medical graduates do not move from graduation into professional
+practice through the university degree alone. They must also pass a national
+Exit Exam before they can obtain a medical practice permit and register as
+practitioners. According to Rahimi et al. (2026), the current official name of this
+exam is the National Medical Licensing Examination (NMLE), although it is still
+widely referred to in public usage as the Exit Exam. It functions as a licensing
+requirement for curative medicine and stomatology graduates who intend to
+work in the country, including graduates from local and foreign institutions.
+The same review explained that the exam was initially known as the Exit Exam,
+was later renamed the Afghanistan Medical Licensing Examination (AMLE),
+and then became known as the NMLE. The exam has been reported as a broad
+multiple-choice assessment with 160 questions, 360 total marks, a passing
+score of 216 (60%), and a four-hour time limit. Its content is divided between
+paraclinical subjects, which make up 30% of the exam, and clinical subjects,
+which make up 70%. The paraclinical part covers the same broad subjects
+for both curative medicine and stomatology, including anatomy, physiology,
+pathology, pharmacology, microbiology, and medical ethics, although the exact
+content can differ according to the medical or dental focus of the exam. For
+curative medicine, the clinical part includes general internal medicine, surgery,
+obstetrics and gynecology, pediatrics, ENT (ear, nose, and throat), public
+health, and neurology and mental disorders. For stomatology, the clinical
+part includes general stomatology, periodontology, pediatric stomatology, oral
+and maxillofacial surgery, orthodontics, prosthodontics, and public health
+(Afghanistan Medical Council, 2022).
+The administration of the medical Exit Exam has changed over time. As
+described by Rahimi et al. (2026), the Afghanistan Medical Council (AMC)
+1
+
+
+===== PAGE 20 =====
+CHAPTER 1: INTRODUCTION
+historically arranged these examinations for university and higher-education
+graduates, while the Ministry of Public Health (MoPH) and the National
+Examination Authority (NExA) were connected with examinations for health-
+science institute graduates (Rahimi et al., 2026). More recent official reporting
+from the MoPH stated that the ministry, in coordination with NExA, conducted
+the second round of the 1404 medical licensure examination for curative
+medicine and stomatology graduates (Ministry of Public Health, 2026). For this
+reason, this thesis has treated the Exit Exam as a national licensing examination
+whose administrative pathway has shifted over time, while keeping the project
+focus on the preparation needs of its candidates.
+It is important to place the Exit Exam within the wider Afghan health examination
+landscape. The medical Exit Exam or NMLE is not the same as the health-
+science institute examinations taken by graduates of institute-level programs
+such as pharmacy, nursing, medical technology, anesthesia, and other related
+programs. It is also different from postgraduate specialization and residency
+examinations, which are connected to entry into, or completion of, specialty
+training after medical graduation. According to Rahimi et al. (2026), health-
+science institute examinations and postgraduate specialty pathways have different
+candidate groups, purposes, and administrative arrangements. Therefore, this
+project focused specifically on the licensing exam for curative medicine and
+stomatology graduates, not on institute-level health examinations or postgraduate
+specialization exams.
+The structure of the Exit Exam makes it different from an ordinary semester test.
+It asks graduates to review a large part of their medical training and to perform
+under national, timed, high-stakes conditions. In principle, such an exam can
+support quality assurance by setting a common professional threshold across
+public and private institutions. In practice, preparation is difficult because
+Afghan medical education still faces serious resource and quality challenges. A
+recent commentary on medical education in Afghanistan reported weaknesses
+in infrastructure, learning environment, faculty capacity, access to updated
+educational resources, technology use, and financing (Stanikzai et al., 2025).
+The same paper noted that many programs still depended heavily on lecture
+notes and that available educational resources were not always aligned with
+Exit Exam requirements, leaving students to prepare for the exam largely on
+their own (Stanikzai et al., 2025).
+Student-level evidence pointed in the same direction. In a cross-sectional study
+of senior Afghan medical students, only about one fifth of respondents rated their
+medical training as excellent, while many reported concerns related to session
+2
+
+
+===== PAGE 21 =====
+CHAPTER 1: INTRODUCTION
+organization, faculty support, and access to textbooks and journals (Stanikzai
+et al., 2023). These issues matter for Exit Exam preparation because the exam
+depends not only on remembering isolated facts, but also on regular revision,
+broad subject coverage, and confidence with medical multiple-choice questions.
+According to Parker (2020), repeated low-stakes quizzes can support long-term
+recall better than relying on rereading alone, especially when students are
+allowed to practice more than once and receive feedback. Similarly, according
+to Zhang et al. (2023), realistic practice exams have helped students recognize
+gaps in their knowledge and prepare more actively, although their effectiveness
+has depended on how the practice tasks and feedback are designed.
+The Exit 360 app was proposed in response to this preparation need. The
+project focused on a mobile-first application that helps medical graduates study
+through organized question practice, timed mock tests, feedback, subject-wise
+revision, and progress tracking, with online weekly tests, leaderboards, and
+peer challenges available when internet access allows. It did not claim to solve
+the wider problems of medical education in Afghanistan. Instead, it addressed
+a smaller but practical gap by giving graduates a structured, accessible, and
+exam-oriented way to prepare for a national licensing exam that covers many
+subjects and has direct consequences for their professional future.
+1.2
+Problem Statement
+According to Zhang et al. (2023), practice exams have been shown to improve
+exam preparation by helping learners discover knowledge gaps, practice actively,
+and retain material for a longer period. As emphasized by Parker (2020),
+repeated low-stakes testing has also been valuable, especially when learners
+have been able to try questions more than once and use feedback to guide further
+study. These findings were relevant for Exit Exam preparation because the
+exam has required broad, timed, multiple-choice practice across paraclinical
+and clinical subjects.
+The main problem has been that many Afghan medical graduates have been
+expected to prepare for this licensing exam without enough structured, exam-
+oriented support. As described by Rahimi et al. (2026), the Exit Exam has
+been described as a national licensing assessment that covers a wide range
+of medical subjects and has had to be passed before graduates could obtain
+a medical practice permit. Therefore, preparation problems have not only
+affected exam performance. Unsuccessful or delayed success has also had
+the potential to postpone a graduate’s entry into formal medical practice and
+delay the professional income expected after many years of study. A graduate
+3
+
+
+===== PAGE 22 =====
+CHAPTER 1: INTRODUCTION
+preparing for such an exam has needed more than general reading. They have
+needed a clear way to revise subject areas, attempt timed questions, review
+mistakes, and understand whether their preparation has been improving.
+However, the available preparation environment has not fully supported this
+kind of study. According to Stanikzai et al. (2025), many medical programs in
+Afghanistan have had limited access to updated learning resources and have
+made weak use of educational technology. The same source also reported
+that available learning materials have not always been aligned with Exit Exam
+requirements. This has left graduates to connect the exam blueprint, textbooks,
+lecture notes, and practice questions mostly by themselves. In a separate study
+by Stanikzai et al. (2023), senior medical students reported concerns about
+session organization, faculty support, and access to textbooks and journals.
+These issues have made preparation feel scattered, especially when graduates
+have needed regular practice and timely feedback rather than only passive
+review.
+Online learning has appeared to offer a useful path by reducing dependence
+on fixed class schedules and physical preparation centers. It has also made
+question practice, revision, and feedback more flexible for graduates who have
+had to study at different times and in different places. Still, a purely online
+solution has not been enough in the Afghan context. In a study by Gawhari et al.
+(2021), online education in Afghanistan was found to be affected by limited
+internet access, slow connection speed, high internet costs, and low availability
+of quality digital teaching materials.
+Therefore, Exit Exam preparation has needed a solution that is structured but
+also realistic for local conditions. Graduates have needed access to subject-wise
+questions, timed mock tests, progress tracking, and feedback in a format that
+could continue working even when the internet was limited. At the same time,
+an internet connection could add further value through online weekly tests,
+leaderboards, and peer challenges that have encouraged regular practice. This
+has created the need for an offline-capable, mobile-first Exit Exam preparation
+application that would support steady practice while also offering online
+competitive features when connectivity was available.
+1.3
+Objectives
+This section presents the main objective of the project and the sub objectives used
+to guide its design, implementation, and evaluation. The main objective states
+the overall purpose of developing an Afghan medical Exit Exam preparation
+mobile application, while the sub objectives divide this purpose into smaller
+4
+
+
+===== PAGE 23 =====
+CHAPTER 1: INTRODUCTION
+and more focused parts.
+1.3.1
+Main Objective
+• To design and implement an Afghan medical Exit Exam preparation
+mobile application.
+1.3.2
+Sub Objectives
+• To identify the existing challenges faced by Exit Exam candidates and
+analyze their main preparation needs.
+• To design and implement an Exit Exam preparation mobile application
+based on the identified requirements.
+• To test and evaluate the developed system in relation to its intended
+objectives.
+1.4
+Research Questions
+This section presents the research questions that guide the study. The main
+research question is aligned with the main objective, while the sub research
+questions correspond to the sub objectives and help organize the study around
+problem identification, system development, and evaluation.
+1.4.1
+Main Research Question
+• How can an Afghan Exit Exam preparation mobile application be designed
+and implemented?
+1.4.2
+Sub Research Questions
+• What are the existing challenges faced by Exit Exam candidates and their
+main preparation needs?
+• How can an Exit Exam preparation mobile application be designed and
+implemented based on the identified requirements?
+• How can the developed system be tested and evaluated in relation to its
+intended objectives?
+5
+
+
+===== PAGE 24 =====
+CHAPTER 1: INTRODUCTION
+1.5
+Scope and Limitations
+This section defines what was included in the project and what was left outside
+its boundaries. The scope clarifies the main features, platforms, users, and data
+covered by the system, while the limitations describe the contextual, content,
+technical, and resource constraints that shaped the project.
+1.5.1
+Scope (Inclusions)
+Features: The mobile application included a local question bank, offline
+subject-wise practice tests, general mixed practice tests, optional timed sessions,
+automatic grading, answer review, attempt history, and basic performance
+statistics. These features support repeated practice, progress awareness, and
+preparation across the clinical and paraclinical subjects of the Exit Exam.
+The online scope included authenticated user accounts, backend-managed
+weekly tests, leaderboard snapshots, peer or friend challenge workflows, secure
+server-side grading and basic notification support. The web admin panel included
+controlled tools for reviewing platform activity, inspecting question-bank
+summaries, planning weekly tests, publishing leaderboards, and triggering
+protected backend operations.
+Platforms and technologies: The system was designed as an offline-capable
+Android application developed with Flutter. Local SQLite storage was included
+for the bundled question bank and offline attempt records, so that the main
+practice workflow can remain usable without an internet connection. The online
+side used Firebase services for account-based and competitive workflows. The
+backend scope included Firebase Authentication, Cloud Firestore, TypeScript
+Firebase Cloud Functions, and Firebase Cloud Messaging.
+The internal
+admin panel intended for controlled operational work was developed as a web
+application using React, TypeScript, and Vite.
+Users: The target users are curative medicine and stomatology graduates
+preparing for the Afghan medical Exit Exam, as well as final-year students
+approaching the licensing stage.
+Data: The data scope included question-bank content, local and online test
+attempts, performance statistics, user profile data, friendship and peer-interaction
+records, server-graded submissions, weekly test records, leaderboard records,
+challenge records, admin workflow data, and questionnaire responses used for
+requirements elicitation.
+6
+
+
+===== PAGE 25 =====
+CHAPTER 1: INTRODUCTION
+1.5.2
+Limitations (Exclusions)
+Context: The project focused on the Afghan medical Exit Exam context and did
+not aim to cover all health-sector examinations in Afghanistan. Health-science
+institute examinations, specialization or residency examinations, and other
+professional tests are outside the direct scope.
+The questionnaire used a
+limited sample of relevant respondents, so its findings should be treated as
+requirements-oriented evidence rather than a complete national measurement
+of all Exit Exam candidates.
+Content: The question bank used in the project was limited in language and
+coverage, with the current content prepared in Dari. A complete, expert-verified,
+bilingual Dari and Pashto question bank is outside the current capstone scope
+because it requires medical expert review, careful content authorization, and
+long-term content maintenance. The system architecture supported future
+question-bank expansion, but the present work does not claim to provide a full
+official replacement for medical textbooks, preparation centers, or authorized
+exam materials.
+Technical: Several advanced technical features were also excluded from the
+current scope. These include real-time challenge sessions, continuously updating
+live leaderboards, large-scale tournaments, advanced adaptive learning, video
+lessons, medical animations, real-time chat, and full production deployment
+to app stores. Challenge tests were treated as asynchronous workflows, and
+leaderboard results were published as backend-generated snapshots after grading
+to keep backend reads, writes, and operating costs manageable within the
+prototype scope.
+Resource: The project was constrained by the capstone timeline, limited
+team size, Firebase usage costs, limited formal effectiveness testing, and the
+need to validate the system within a prototype environment. Therefore, the
+project focused on functional correctness, usability, offline access, secure
+backend-controlled online workflows, and preparation support rather than
+proving long-term improvement in official Exit Exam pass rates.
+1.6
+Significance of the Project
+According to Rahimi et al. (2026), the Exit Exam has functioned as a required
+licensing assessment for medical and stomatology graduates who intend to
+work in Afghanistan. This has given the project practical significance because
+preparation for the exam has been connected not only to a single test result,
+but also to professional registration, work permission, and the transition from
+7
+
+
+===== PAGE 26 =====
+CHAPTER 1: INTRODUCTION
+medical education into practice. A graduate who has struggled to prepare
+effectively has faced the risk of delayed entry into formal medical work after
+many years of study. Supporting preparation for this exam has therefore been
+an important educational and professional need.
+Exit 360 was developed to address this need by providing a structured mobile
+preparation system for the Afghan Exit Exam. The system focused on subject-
+wise practice, timed mock tests, automatic feedback, progress tracking, and
+review of previous attempts. These features have been significant because they
+turned preparation from scattered reading into a more organized process of
+practice, review, and improvement. As emphasized by Parker (2020), repeated
+low-stakes testing has supported learning when students have been able to
+practice more than once and use feedback to guide further study. Similarly,
+according to Zhang et al. (2023), realistic practice exams have helped learners
+identify knowledge gaps and prepare more actively. Research on mobile quiz
+applications has also suggested that learners have benefited from being able to
+test themselves at flexible times and places (R¨uth et al., 2021). Other studies
+have reported that on-demand mobile assessments have increased practice
+opportunities, engagement, and learning satisfaction (Lazarinis et al., 2017).
+The project has also been significant because it was designed for local access
+conditions. Studies on Afghan medical education have reported limited access
+to updated learning resources, weak use of educational technology, and learning
+materials that have not always been aligned with Exit Exam requirements
+(Stanikzai et al., 2025). Student-level evidence has also shown concerns related
+to session organization, faculty support, and access to textbooks and journals
+(Stanikzai et al., 2023). By making the core question bank, practice tests,
+results, and progress history available offline, Exit 360 has been able to support
+graduates who have not been able to depend on constant internet access or
+regular attendance at physical preparation centers.
+At the same time, the online features have added further value when connectivity
+was available. Weekly tests, leaderboards, and peer challenges have been able to
+encourage regular practice and create a sense of learning momentum. In a review
+by Li et al. (2024), leaderboards in higher education were found to support
+motivation, engagement, and performance. According to Abdul Halim et al.
+(2022), leaderboard-based gamification has also helped improve participation
+and encourage learning beyond regular class activity. According to Ma et al.
+(2024), healthy academic competition has helped encourage learners to invest
+effort in their studies.
+Overall, Exit 360 has been significant because it combined structured exam
+8
+
+
+===== PAGE 27 =====
+CHAPTER 1: INTRODUCTION
+practice with realistic access design. It supported offline preparation as the
+foundation, while using online activities as an additional motivational layer.
+In this way, the project responded to the specific preparation needs of Afghan
+medical graduates and offered a practical tool for improving readiness for a
+national licensing exam with direct consequences for their professional future.
+1.7
+Research Methodology
+This study used a quantitative research methodology to support requirements
+elicitation for an Afghan medical Exit Exam preparation mobile application.
+Before preparing the questionnaire, an initial feature set was derived from the
+literature review and the analysis of existing local and foreign medical exam
+preparation systems. This helped identify relevant preparation features such as
+question banks, timed practice tests, answer review, progress tracking, offline
+access, and online learning activities.
+The main data collection instrument was a structured questionnaire administered
+to medical graduates and final-year students preparing for the Afghan medical
+Exit Exam. The questionnaire collected feedback about preparation habits,
+access to practice tests, internet availability, offline-access needs, feature
+usefulness, feature priorities, and expected impact. Although Cochran’s formula
+indicated that a larger sample would be required for a statistically representative
+survey, the collected responses were treated as requirements-oriented evidence
+rather than nationwide statistics.
+The questionnaire responses were analyzed using descriptive statistics such
+as frequencies, percentages, mean scores, and weighted priority rankings.
+The results helped summarize the main preparation problems faced by Exit
+Exam candidates and identify which proposed features were considered most
+useful. These findings were then used to refine requirements in areas such as
+offline question practice, timed mock tests, answer review, progress tracking,
+synchronization, and optional online competition.
+1.8
+Development Methodology
+The development of Exit 360 followed an Agile development methodology
+with a lightweight Scrum-based organization. The project was divided into
+manageable iterations rather than being implemented as one fixed sequence
+of tasks. This approach was suitable because the system combines an offline
+mobile preparation experience, local storage, Firebase-backed online services,
+and an internal web admin panel. It also allowed the team to review and
+9
+
+
+===== PAGE 28 =====
+CHAPTER 1: INTRODUCTION
+improve each main part of the system as requirements became clearer through
+the literature review, questionnaire findings, prototype review, and supervisor
+feedback.
+The first iteration focused on the offline Flutter foundation, including navigation,
+local Exit Exam question storage, subject-wise and mixed practice tests, timers,
+local grading, result summaries, answer review, attempt history, and basic
+statistics. The second iteration added the online and social layer through Firebase
+Authentication, Firestore, Cloud Functions, user profiles, friendship, weekly
+tests, leaderboards, asynchronous challenges, synchronization, notifications, and
+security-rule validation. The third iteration focused on the React, TypeScript,
+and Vite admin panel for controlled operational workflows such as question-bank
+management; weekly-test management and leaderboard publishing; read-only
+summaries for users, sessions, submissions, and challenges; and platform
+inspection.
+Each major iteration produced a prototype that was reviewed before the
+next stage of work. The first prototype focused on offline preparation, the
+second on online social and competition features, and the third on admin and
+operational workflows. Git and GitHub were used throughout the monorepo,
+while Flutter tooling, Android Studio, Visual Studio Code, Firebase tooling,
+and Chrome DevTools supported implementation, testing, backend validation,
+and documentation.
+1.9
+Outcomes
+The main outcome of the project was Exit 360, an Afghan medical Exit
+Exam preparation system designed around offline access, structured practice,
+progress feedback, and optional online competition. The implemented work
+included a Flutter and Dart mobile application with a local SQLite question
+bank, subject-wise and mixed practice tests, timed sessions, automatic grading,
+answer review, attempt history, and basic statistics.
+The online layer included Firebase Authentication, Firestore data flows, Cloud
+Functions for trusted competitive workflows, user accounts, weekly tests,
+leaderboard-related logic, friend and challenge operations, notification support,
+and backend validation through the Firebase Emulator Suite and deployed
+function testing. The project also produced an internal React, TypeScript, and
+Vite admin panel for controlled operational workflows such as question-bank
+management, weekly-test management, leaderboard publishing, and platform
+inspection.
+10
+
+
+===== PAGE 29 =====
+CHAPTER 1: INTRODUCTION
+In addition to the working software, the project produced system design
+artifacts such as use case diagrams, sequence diagrams, architecture design,
+entity-relationship design, and relational schema design. It also produced
+questionnaire-based requirements evidence, prototype review findings, and
+an automated Flutter test suite covering important domain logic, models,
+controllers, and selected widget flows. Together, these outcomes documented
+the requirements, design, implementation, testing, scope, limitations, and
+planned improvements of the system, all of which were packaged in the current
+LaTeX thesis.
+1.10
+Organization of the Report
+• Chapter 1 introduced the Afghan medical Exit Exam preparation problem,
+the background of the project, the research objectives, the research
+questions, the scope and limitations, and the significance of the proposed
+mobile preparation application. It also provided brief summaries of the
+research methodology, development methodology, project outcomes, and
+the overall organization of the report.
+• Chapter 2 reviewed related work and existing systems in the area of
+medical licensing exam preparation. It discussed local Afghan Exit Exam
+preparation applications, selected international medical exam preparation
+platforms, recent educational technology trends, and the research gap that
+the project aimed to address.
+• Chapter 3 presented the methodology of the project.
+It explained
+the research methodology, requirements elicitation, questionnaire
+design, population and sampling, data analysis method, functional
+and non-functional requirements, development methodology, system
+design, implementation, testing, and the main challenges and solutions
+encountered during the project.
+• Chapter 4 presented the results of the questionnaire analysis.
+It
+summarized the respondent profile, current practice and access conditions,
+internet and offline-access needs, feature usefulness and priorities,
+likelihood of adoption, perceived impact, and the way these findings
+support the first research objective and research question.
+• Chapter 5 discussed the meaning of the results and implementation
+findings in relation to the research questions and project objectives.
+It interpreted how the survey findings, system design decisions,
+11
+
+
+===== PAGE 30 =====
+CHAPTER 1: INTRODUCTION
+implementation choices, and testing outcomes support the overall
+argument of the thesis.
+• Chapter 6 concluded the thesis by summarizing the work completed, the
+main contributions of the project, the achievement of objectives, and the
+limitations that remain. It also outlined future enhancements such as
+expanding the question bank, adding stronger bilingual content support,
+improving online features, conducting more formal user evaluation, and
+preparing the system for wider deployment.
+12
+
+
+===== PAGE 31 =====
+CHAPTER 2: LITERATURE REVIEW
+This chapter reviews the existing systems, technologies, and research findings
+that informed the design of Exit 360. It first examines local Afghan medical
+exam preparation applications, then reviews selected international medical
+licensing exam platforms for design lessons relevant to the Afghan Exit Exam
+context. The chapter also discusses recent educational and technological trends
+related to mobile practice, offline access, analytics, and competitive learning.
+It concludes with a synthesis of the reviewed literature and explains how its
+practical lessons guided the locally focused design of Exit 360.
+2.1
+Related Work and Existing Systems
+Medical exam preparation apps have become an important part of contemporary
+test preparation worldwide. Therefore, this section reviewed existing digital
+systems for medical licensing and high-stakes examination preparation in order
+to position Exit 360 within both the Afghan Exit Exam context and the broader
+landscape of exam-preparation technologies. Since the Afghan Exit Exam is
+a national licensing requirement that affects graduates’ registration and entry
+into formal medical practice (Rahimi et al., 2026), the review first considered
+locally relevant Afghan medical exam preparation applications rather than
+beginning with general international platforms. The purpose of the review was
+not simply to list available applications, but to examine how existing systems
+support core preparation needs such as access to question banks, timed practice,
+automatic grading, feedback, progress monitoring, offline use, synchronization,
+and competitive learning. After the local systems were examined, selected
+comparable medical exam preparation platforms from other contexts were
+discussed only where their mechanisms provide useful design insight for Exit
+360. This analytical approach helped identify the practical and technical gaps
+that remain in current solutions, especially for Afghan medical graduates who
+may face limited connectivity, unequal access to preparation resources, and
+limited structured support while preparing for the national licensing exam.
+2.1.1
+Local Medical Exam Preparation Applications
+Within Afghanistan, the current mobile preparation ecosystem for the Exit
+Exam is still narrow. The main locally oriented applications identified for this
+review were two Android apps, MedQuiz and EXIT Medical Exam Prep, each
+attempting to support health-science graduates through mobile-based question
+practice. Firstly, MedQuiz, locally known as Azmoonak Tebi, is offered by the
+M. Saber Sabiry Institute of Health Science (SIHC), and is relevant because
+13
+
+
+===== PAGE 32 =====
+CHAPTER 2: LITERATURE REVIEW
+it includes question packs for the Exit Exam for both curative medicine and
+stomatology graduates (Azmoonak Tebi, 2026). However, the application
+is not dedicated only to the Exit Exam since it also presents question packs
+for other health-science institute examinations, including nursing, pharmacy,
+dental prosthesis, medical technology or laboratory sciences, and midwifery.
+MedQuiz appears to follow an online-first model because users must log in
+or sign up before accessing the main content. At startup, it provides only ten
+static demo questions, while the remaining question packs are placed behind
+paid, limited-time subscriptions. Because the app is new and has no public
+review base, the size, quality, and exam alignment of its paid question packs
+cannot be judged from public information alone. The available screenshots
+suggest that the app includes test results, answer review, attempt history,
+basic statistics, and performance tracking, which are useful elements for exam
+preparation. Compared with Exit 360, however, MedQuiz appears more limited
+in offline access and transparency for new users. Exit 360 was designed around
+an offline-capable core question bank, timed mock tests, progress tracking,
+and review features, while using online weekly tests, leaderboards, and peer
+challenges as additional motivational features when connectivity is available.
+Therefore, MedQuiz shows that there is local interest in mobile medical exam
+preparation, but it also highlights the need for a more focused, accessible, and
+offline-capable Exit Exam preparation system.
+Secondly, EXIT Medical Exam Prep by Zahid apps store represents a stronger
+offline model for local medical exam preparation (Zahid apps store, 2026). The
+application appears to provide a large bilingual Dari and Pashto question bank
+immediately after installation, without requiring any login, account creation,
+or payment. This is a notable strength in the Afghan context because it allows
+graduates to begin practicing without depending on internet access, registration,
+or a paid entry step. For the Exit Exam itself, the app includes two complete
+160-question papers from 1401 and 1405, which can help users become familiar
+with full exam length and question style; however, its Exit Exam coverage is
+limited to only those two papers and it does not offer comprehensive subject-wise
+practice based on the official exam blueprint for each of the paraclinical and
+clinical subjects in curative medicine and stomatology. However, like MedQuiz,
+the app also includes practice questions for other health-science institute
+examinations, specifically medical technology, pharmacy, and dental prosthesis,
+this time with proper subject breakdown. The application supports timed
+tests, results, and answer review, which are important baseline features for
+exam practice. Subject-wise practice for each exam remains fully offline and
+unlimited, but creating a general practice test for a selected exam seems to have
+a daily limit and eventually requires watching an advertisement, which depends
+14
+
+
+===== PAGE 33 =====
+CHAPTER 2: LITERATURE REVIEW
+on internet access. Nevertheless, the app appears to offer little beyond the
+immediate test session. It records the best percentage for a specific subject test,
+but there is no visible support for attempt history, detailed statistics, progress
+tracking, or performance analysis across subjects and repeated attempts. It
+also has no online learning layer, such as weekly tests, leaderboards, or peer
+challenges. Compared with Exit 360, EXIT Medical Exam Prep is strong in
+offline access and direct availability of bilingual questions, but as of now, it
+remains limited as a dedicated long-term preparation system for the Exit Exam.
+Exit 360 aimed to preserve the offline advantage while adding alignment with
+the official Exit Exam structure and subject breakdown, progress monitoring,
+practice history, and optional online competitive features when internet access
+is available.
+It is also important to note that both local applications are very recent. MedQuiz
+was released on January 18, 2026, had more than 100 downloads, no public
+rating or reviews, and was listed as version 1.0.1 at the time of this review
+(Azmoonak Tebi, 2026). EXIT Medical Exam Prep was released on April 15,
+2026, had more than 500 downloads, a 4.4 rating based on only seven reviews,
+and was listed as version 1.1.0 (Zahid apps store, 2026). Therefore, their
+presence does not remove the need for Exit 360, especially because both apps
+have appeared months after the project identification and selection phase. It also
+shows that the local app landscape is changing quickly. Newer development
+approaches, including AI-assisted and agentic coding, suggest that small teams
+can release and update apps faster than before. For this reason, the comparison
+above should be understood as a snapshot of these applications as they appeared
+in June 2026, not as a final judgment of how they may develop in the future.
+2.1.2
+International Medical Licensing Exam Preparation Systems
+After the local mobile preparation landscape was examined, the review moved
+to foreign medical licensing preparation systems. These systems are not direct
+competitors to Exit 360 because they are built for different examinations,
+languages, institutions, and markets. However, they are useful design references
+because they show how mature exam-preparation products organize large
+question banks, timed mocks, answer review, progress tracking, revision
+support, and optional online services. The following applications were therefore
+reviewed as selective design references for an Afghan Exit Exam preparation
+system, not as models to copy without adjustment.
+UWorld Medical Exam Prep is one of the most recognized preparation systems
+for the United States Medical Licensing Examination (USMLE), including Step
+15
+
+
+===== PAGE 34 =====
+CHAPTER 2: LITERATURE REVIEW
+1, Step 2 Clinical Knowledge (Step 2 CK), and Step 3 (UWorld, 2026). These
+steps represent different stages of the USMLE pathway, from basic science
+foundations to clinical knowledge and later readiness for unsupervised medical
+practice. It is available through iOS, Android, and web platforms, which allows
+candidates to move between mobile and desktop study. Its core value is a large
+exam-style question bank combined with custom quizzes, self-assessments,
+answer explanations, smart flashcards, spaced repetition, a medical library,
+videos, study planning, offline study, and synchronization across devices. For
+Exit 360, UWorld shows the value of treating practice as a complete study
+cycle rather than as isolated question solving. Its flashcards, videos, and large
+commercial content library are beyond the current scope of Exit 360, but its
+emphasis on timed blocks, review, weak-area awareness, and offline continuation
+is directly relevant to Afghan graduates who need steady preparation even when
+connectivity is unreliable.
+AMBOSS is a global medical knowledge and question-bank ecosystem used for
+examinations such as USMLE, United States medical school Shelf exams,
+the Medical Council of Canada Qualifying Examination (MCCQE), the
+Saudi Medical Licensing Exam (SMLE), and the International Foundations
+of Medicine (IFOM) (AMBOSS, 2026).
+It is available on iOS, Android,
+and web platforms, with mobile access extending the main knowledge and
+question-bank experience. Its major strength is the close connection between a
+searchable medical library and board-style questions, supported by personalized
+recommendations, score prediction, image overlays, Anki integration, study
+plans, and an offline knowledge app. This model is valuable because it connects
+practice questions to explanation and reference material. For Exit 360, the
+relevant lesson is not to reproduce a full medical encyclopedia, which would
+be too large for the project scope, but to connect each practice attempt with
+review, explanation, subject mapping, and progress signals that help graduates
+understand what to revise next.
+Plabable is focused on the Professional and Linguistic Assessments Board
+(PLAB) examinations in the United Kingdom (Plabable, 2026). It is offered
+across iOS, Android, and web platforms, making it accessible as both a
+mobile and browser-based study tool. It provides a large set of high-yield PLAB
+questions, mock exams, revision guides, flashcard-style Gems, comment threads,
+and community support through dedicated groups. Its design is narrower than
+broader knowledge platforms such as AMBOSS, but that narrowness is also its
+strength because the content is clearly framed around one licensing route. For
+Exit 360, Plabable suggests that a focused exam-specific system can be useful
+even without building a very large multimedia learning platform. However, its
+16
+
+
+===== PAGE 35 =====
+CHAPTER 2: LITERATURE REVIEW
+community and group-based support depends on online participation, while
+Exit 360 must keep the core practice experience usable offline and make social
+or competitive features optional.
+Quesmed supports the United Kingdom Medical Licensing Assessment
+(UKMLA), PLAB, Membership of the Royal Colleges of Physicians (MRCP),
+Multi-Specialty Recruitment Assessment (MSRA), and other examinations in
+the United Kingdom (Quesmed, 2026). It is available through iOS, Android,
+and web platforms, which supports both phone-based revision and longer study
+sessions on larger screens. It combines a question bank with integrated notes,
+progress trackers, detailed filters, dedicated test mode, offline downloads for
+selected questions, image-based questions, flashcards, and clinical examination
+resources. This makes Quesmed a useful example of combining exam simulation
+with topic-level filtering and structured revision. For Exit 360, the most relevant
+ideas are subject filters, timed practice, answer review, and offline access to
+selected content. Its broader clinical examination video features are useful
+in medical education, but they are outside the current scope of an Exit Exam
+preparation app centered on multiple-choice practice.
+PassMedicine is used for medical finals and UKMLA preparation in the United
+Kingdom (PassMedicine, 2026). It is delivered as an installable progressive web
+application (PWA), mobile web system, and desktop web system rather than as
+a conventional native-only app. It provides a large single-best-answer question
+bank, high-yield textbooks, extended notes, timed tests, mock exams, peer
+benchmarking, and a knowledge tutor that supports repeated review of facts. For
+Exit 360, PassMedicine shows how a preparation product can combine question
+practice, explanations, revision notes, and performance comparison without
+relying mainly on live teaching or heavy multimedia. The peer benchmarking
+idea is relevant to Exit 360’s online layer, while the offline and installable
+approach reinforces the importance of flexible access in lower-connectivity
+contexts.
+Marrow is a major Indian medical exam preparation platform for the National
+Eligibility cum Entrance Test for Postgraduate (NEET-PG), India’s National
+Exit Test (NExT), and super-specialty examinations (Marrow, 2026). It is
+available on iOS, Android, and web platforms, which supports the large video
+and test ecosystem across devices. Its features include extensive video lessons,
+large multiple-choice question sets, incorrect-question retargeting through
+the Magic Module, topic mapping, many tests and grand tests, analytics,
+animations, and clinical scenarios. Marrow demonstrates how a mature medical
+preparation platform can combine teaching content, repeated practice, and
+17
+
+
+===== PAGE 36 =====
+CHAPTER 2: LITERATURE REVIEW
+analytics at scale. For Exit 360, the most relevant parts are structured mock tests,
+incorrect-question review, subject mapping, and progress analytics. Its large
+video library, animations, and clinical scenarios are valuable but beyond the
+intended scope of this capstone, which focuses more narrowly on offline-capable
+practice and feedback.
+PrepLadder is another Indian platform for NEET-PG, the Institute of National
+Importance Combined Entrance Test (INI-CET), the Foreign Medical Graduate
+Examination (FMGE), and NEET super-specialty examinations (PrepLadder,
+2026). It is offered through iOS, Android, and web platforms, which fits its role
+as a multi-device coaching and revision system. It combines video lectures, a
+high-yield question bank, detailed analytics, three-dimensional (3D) models,
+animations, real patient cases, rapid revision content, and material mapped to
+past questions and current exam patterns. This shows the value of building a
+preparation workflow around both content delivery and repeated testing. For
+Exit 360, the key design lesson is exam-pattern alignment and useful analytics,
+not the replication of expensive multimedia production. In the Afghan context,
+a lighter system with a reliable local question bank, timed mock tests, and
+clear subject-based progress may be more realistic than a large video-centered
+coaching platform for now.
+DAMS, or Delhi Academy of Medical Sciences, is another Indian medical exam
+preparation ecosystem for NEET-PG, FMGE, INI-CET, National Eligibility
+cum Entrance Test for Master of Dental Surgery (NEET-MDS), and related
+examinations (DAMS, 2026). It is available through iOS, Android, and web
+platforms, matching its blend of app-based practice and online coaching.
+Its feature set includes live two-way interactive classes, recorded courses,
+multi-level testing, a question bank with video solutions, rapid revision, previous-
+year-question focus, and AI-enabled competitive assessment. DAMS is therefore
+especially strong as a coaching and live-learning ecosystem. For Exit 360,
+however, live classes, video solutions, and broad coaching services are outside
+scope because they require large teaching teams, strong connectivity, and
+continuous content production. The useful design lessons are the testing ladder,
+repeated assessment, competitive motivation, and focus on exam-style practice,
+which can be adapted through weekly tests, leaderboards, and peer challenges
+when internet access is available.
+CanadaQBank is a Canada-focused but multi-exam platform that supports
+the MCCQE and also offers resources for other exams such as the Pharmacy
+Examining Board of Canada (PEBC), Australian Medical Council (AMC),
+PLAB, SMLE, and USMLE (CanadaQBank, 2026). It is available on iOS,
+18
+
+
+===== PAGE 37 =====
+CHAPTER 2: LITERATURE REVIEW
+Android, and web platforms. Its MCCQE Part I preparation includes thousands
+of multiple-choice questions, timed and untimed modes, tutor mode, category
+filters, notes, subject analytics, comparison with other users, and synchronization
+between desktop and mobile use. This makes it relevant to Exit 360 because it
+treats exam preparation as repeated practice across subjects and categories, not
+only as full mock tests. Its user comparison and analytics are useful references
+for Exit 360’s progress and online competition ideas, but the Afghan system
+must remain simpler, localized, and usable without constant account-based
+synchronization.
+The Australian Medical Council Multiple-Choice Question (AMC MCQ)
+Preparation App, delivered through eMedici, is a notable case because it is
+connected to an official licensing body rather than being only a commercial
+vendor product (Australian Medical Council, 2026). Through the eMedici
+environment, it provides desktop and mobile access on iOS and Android, along
+with AMC-written practice questions, immediate feedback, and periodic refresh
+of content. The broader eMedici environment also includes larger question
+banks, mock exams, case studies, and Objective Structured Clinical Examination
+(OSCE) resources. For Exit 360, the most important lesson is the value of
+official-style exam alignment. Even though Exit 360 is not an official board
+app, its credibility depends on aligning questions, subjects, and mock tests with
+the Afghan Exit Exam structure and subject distribution rather than simply
+collecting general medical questions.
+PassGP serves Australian and New Zealand medical examination pathways,
+including AMC, Royal Australian College of General Practitioners (RACGP),
+Australian College of Rural and Remote Medicine (ACRRM), Royal Australian
+and New Zealand College of Obstetricians and Gynaecologists (RANZCOG),
+and related exams (PassGP, 2026).
+It is available through iOS and web
+platforms, linking app-based study with desktop access. It provides a large
+question collection, full mock exams, an AI virtual tutor, flashcards, structured
+tutorials, academy content, and integration between app and desktop study. Its
+broad multi-exam coverage is useful for users in several pathways, but it also
+requires a content and support model much larger than Exit 360. For the Afghan
+context, the practical lessons are full mock exams, flashcards or review tools,
+and guided feedback. The AI tutor and broad academy content are interesting
+future directions, but this project focused first on reliable offline practice and
+measurable progress for one licensing exam.
+SMLE Gate is focused on the Saudi Medical Licensing Exam in Saudi Arabia
+(SMLE Gate, 2026). It is available as a web platform with iOS and Android app
+19
+
+
+===== PAGE 38 =====
+CHAPTER 2: LITERATURE REVIEW
+access, which makes it more comparable to the broader multi-platform systems
+reviewed above. It offers simulated exams with real timing, a comprehensive
+question bank, performance tracking, result review, notes, saved questions, and
+a mobile interface designed for focused exam preparation. Compared with
+larger ecosystems such as UWorld, AMBOSS, or Marrow, SMLE Gate appears
+closer to the type of focused licensing-exam app that Exit 360 aimed to be.
+Its emphasis on simulated exams, review, notes, and performance tracking
+is directly relevant, while its country-specific content shows why Exit 360
+must be localized around the Afghan Exit Exam rather than relying on general
+international medical question banks.
+Overall, the global review showed that modern medical exam preparation
+systems are no longer just simple question lists.
+The strongest products
+combine exam-aligned question banks, timed practice, answer review, analytics,
+structured revision, weak-area targeting, and in some cases multimedia teaching
+or AI support. Many of these advanced features depend on stable internet, large
+content teams, subscription ecosystems, or official board access, which cannot
+be assumed for Afghan graduates. Another repeated pattern is broad platform
+support, since most mature systems combine mobile apps with web access so
+that candidates can move between phone-based and desktop study. Exit 360 was
+first planned as an Android application, but its Flutter-based implementation
+can make future expansion to additional platforms more practical. Therefore,
+Exit 360 selectively adapted the practical parts of these systems: subject-wise
+practice, timed mock tests, review, progress tracking, offline access, and optional
+online competition. Its design was kept locally focused, offline-capable, and
+aligned with the official Exit Exam subject breakdown.
+Taken together, the local and international systems represented different levels
+of maturity and different approaches to medical exam preparation. The local
+applications reflected Afghan language, access, and examination needs, while
+the international systems provided stronger examples of structured practice,
+answer review, progress tracking, analytics, and competitive motivation. Many
+advanced international features, however, depended on large content teams,
+stable connectivity, official content access, or commercial infrastructure. These
+findings supported a selective approach for Exit 360, which adapted the most
+practical preparation features while remaining offline-capable, locally focused,
+and aligned with the Afghan Medical Exit Exam context.
+20
+
+
+===== PAGE 39 =====
+CHAPTER 2: LITERATURE REVIEW
+2.2
+Recent Trends and Technologies
+Recent developments in educational technology show a clear shift from static
+digital content toward interactive, data-informed, and mobile-first learning
+systems. In the context of high-stakes licensing examinations, this shift is
+especially important because candidates do not only need access to reading
+material; they also need repeated practice, feedback, progress awareness,
+motivation, and a clear way to organize their preparation. Exit 360 was therefore
+connected to several related trends: mobile self-regulated learning, offline-first
+design, cloud-backed synchronization, learning analytics, gamified competition,
+and cross-platform development. These trends are not independent from one
+another. In a preparation system, they work together: mobile access allows
+frequent practice, offline storage protects continuity, cloud services support
+shared records and competition, and analytics convert attempts into practical
+feedback.
+One of the most relevant trends is mobile learning, particularly through quiz
+and practice-test applications. Mobile devices allow learners to practice outside
+fixed classroom schedules, which is valuable for students who cannot regularly
+attend preparation centers or who need flexible study time. According to R¨uth
+et al. (2021), mobile quiz applications can support self-regulated learning by
+giving learners flexibility in terms of location, time, and device. Similarly,
+according to Lazarinis et al. (2017), mobile self-assessment allows learners
+to test themselves at their own pace and receive feedback without depending
+on a formal classroom session. For Exit 360, this trend directly supported the
+decision to build an Android-focused mobile application rather than only a
+web-based system. Medical graduates preparing for the Exit Exam often need
+short, repeated practice sessions across many subjects, and mobile access makes
+this more realistic than a system tied to a specific place or schedule.
+The educational value of repeated testing is another important foundation for
+modern exam preparation systems. Research on practice exams shows that
+testing is not only a way to measure knowledge, but also a learning activity in
+itself. As argued by Parker (2020), repeated low-stakes quizzes can support
+long-term learning more effectively than a single high-stakes assessment, while
+according to Zhang et al. (2023), realistic and earlier practice exams can
+influence students’ metacognition, study behavior, and exam performance. In
+the Exit Exam context, this supports the use of timed subject tests, general
+mock tests, and weekly exams. A preparation application should not simply
+store past questions; it should create conditions where students can repeatedly
+practice under exam-like constraints, receive quick feedback, and adjust their
+21
+
+
+===== PAGE 40 =====
+CHAPTER 2: LITERATURE REVIEW
+study behavior over time.
+Because Exit 360 was designed for Afghan medical graduates, offline-first
+architecture is a particularly important technological trend. Online learning in
+Afghanistan faces practical barriers such as limited connectivity, slow internet
+speed, high internet costs, and uneven availability of quality digital learning
+resources (Gawhari et al., 2021). A purely online preparation system may
+therefore fail exactly when students need it most. Offline-first design responds
+to this problem by placing essential learning resources on the device and
+treating the network as an enhancement rather than a permanent requirement.
+In Exit 360, this meant storing a prebundled question bank locally and allowing
+students to take subject-wise and general tests even without internet access.
+SQLite is suitable for this kind of embedded local storage because it is a small,
+self-contained, full-featured SQL database engine widely used in mobile and
+desktop applications (SQLite Consortium, 2026). This supports the system’s
+need for fast local access to questions, options, answers, and attempt records.
+At the same time, offline-only systems can become limited if users cannot
+preserve records, compare performance, or participate in shared activities.
+For this reason, another recent trend is the combination of local storage with
+cloud-backed synchronization.
+Cloud services allow a system to manage
+authenticated accounts, shared tests, remote grading, leaderboards, and
+cross-device or restored-connectivity workflows. Firestore documentation,
+for example, describes offline persistence in which actively used data can be
+cached locally and local changes can be synchronized with the backend when
+the device comes back online (Google Firebase, 2026). Although Exit 360
+used its own project-specific data model and synchronization rules, the same
+general principle is important: students should be able to continue learning
+offline while the system later uploads attempts, updates online records, and
+participates in competitive workflows when internet access becomes available.
+This is especially relevant for weekly tests and challenge submissions, where
+authoritative server-side records are needed for fairness and consistency.
+Learning analytics is another major trend in educational applications. Instead
+of only telling a student whether a single answer is correct or wrong, analytics
+can summarize performance across attempts, subjects, time periods, and test
+types. At the application level, Exit 360 applied this idea by tracking individual
+attempts, scores, and progress indicators. Such analytics help students see
+whether they are improving, which subjects require more work, and how their
+performance changes across practice sessions. This addresses a limitation
+observed in many existing local apps, where feedback often stops at the number
+22
+
+
+===== PAGE 41 =====
+CHAPTER 2: LITERATURE REVIEW
+of correct and wrong answers after a single test.
+Gamification and competitive learning have also become common in
+exam-preparation systems.
+The purpose of gamification in this context
+is not entertainment for its own sake, but motivation, engagement, and
+repeated participation. Leaderboards are one of the most common competitive
+mechanisms. In a systematic review by Li et al. (2024), leaderboards in higher
+education were found to positively influence learning motivation, engagement,
+and performance.
+According to Abdul Halim et al. (2022), leaderboard
+gamification can also improve participation and encourage extra learning
+activity. For Exit 360, leaderboards are relevant because Exit Exam preparation
+is also high-stakes and competitive; students often want to know how their
+performance compares with others. However, the implementation must match
+the local context. Instead of real-time leaderboard streaming, which may increase
+bandwidth and backend cost, Exit 360 used snapshot-based leaderboard updates
+for weekly tests. This preserved the motivational value of ranking while keeping
+the system more practical for low-connectivity environments.
+Related to gamification is the trend of peer-based and challenge-based learning.
+Competition can increase effort when it is structured in a healthy way.
+According to Ma et al. (2024), competitive attitude and a supportive competitive
+environment can be associated with stronger task motivation and performance.
+In Exit 360, this idea was implemented through the asynchronous challenge
+workflow, where students can challenge followers without needing a real-time
+session. This design is important because real-time multiplayer testing would
+be more difficult under unstable internet conditions. An asynchronous model
+allows students to compete, compare results, and remain socially engaged while
+still respecting the connectivity constraints identified in the Afghan educational
+context.
+Finally, cross-platform and cloud-integrated development tools have made it
+more feasible for small student teams to build sophisticated educational systems
+within limited time and resource constraints. Flutter is relevant in this regard
+because it is a Google-supported framework for building applications across
+multiple screens and platforms from a shared codebase (Google, 2025). For
+Exit 360, Flutter supported the development of a mobile-first interface while
+leaving room for future expansion. Combined with local SQLite storage and
+cloud-backed services, this technology stack supported the main design goal of
+the project: an application that remains useful offline, becomes richer when
+online, and connects practice, review, competition, and analytics in one coherent
+workflow. Overall, the recent trends most relevant to Exit 360 are not simply
+23
+
+
+===== PAGE 42 =====
+CHAPTER 2: LITERATURE REVIEW
+fashionable technologies; they are practical responses to the educational and
+infrastructural realities of Afghan Exit Exam preparation.
+2.3
+Literature Review Synthesis
+The reviewed local applications showed that mobile preparation for the Afghan
+Exit Exam had already started to emerge, but the local landscape remained early
+and incomplete. MedQuiz demonstrated local interest in digital question packs
+for the Exit Exam and other health-science examinations, but its online-first
+access model, limited visible demo content, paid bank-based structure, and
+uncertain public evidence about question-bank depth left important gaps for
+students who need dependable daily practice (Azmoonak Tebi, 2026). EXIT
+Medical Exam Prep provided a stronger offline model with Dari and Pashto
+questions, timed tests, answer review, and two complete Exit papers, but
+it remained limited in long-term progress tracking, online competition, and
+broader Exit-specific coverage (Zahid apps store, 2026). These two systems
+were valuable signs of a growing local app landscape, but they did not fully
+address the need for a focused, transparent, offline-capable, and progress-aware
+Exit Exam preparation system.
+The foreign systems reviewed in this chapter showed a more mature direction
+for medical licensing exam preparation. UWorld treated practice as a full cycle
+of timed questions, explanation, review, assessment, and weak-area awareness
+(UWorld, 2026). AMBOSS connected question practice with a larger medical
+knowledge base and performance signals (AMBOSS, 2026), while SMLE Gate
+showed how a national licensing-exam platform could focus on simulated exams,
+saved questions, notes, result review, and performance tracking (SMLE Gate,
+2026). However, these systems were designed for other countries, languages,
+examination bodies, and market conditions. Their models often assume larger
+content teams, stronger subscription ecosystems, wider platform support, and
+more stable internet access than many Afghan graduates can reliably depend on.
+The technology and learning trends discussed in this chapter also point to a
+specific design gap. According to R¨uth et al. (2021), mobile quiz tools can
+support flexible, self-regulated study, and according to Lazarinis et al. (2017),
+mobile self-assessment allows learners to practice and receive feedback outside
+a formal classroom. As discussed by Parker (2020), repeated quizzes can
+support long-term learning, while according to Zhang et al. (2023), realistic
+practice exams can support students’ study behavior and exam readiness. At
+the same time, Afghan online learning conditions made offline-first design
+important (Gawhari et al., 2021). Therefore, the gap was not simply the absence
+24
+
+
+===== PAGE 43 =====
+CHAPTER 2: LITERATURE REVIEW
+of question apps. The stronger gap was the absence of an Exit Exam preparation
+system that combined exam-aligned practice, offline continuity, timed mock
+testing, answer review, progress analytics, and optional online competition in
+one coherent workflow.
+Exit 360 was designed to respond to this gap by adapting the practical lessons
+from both local and foreign systems while remaining focused on the Afghan
+Exit Exam context. Its offline layer was intended to support subject-wise and
+general tests through a prebundled local question bank. Its online layer added
+authenticated profiles, synchronization, weekly tests, leaderboard snapshots,
+and asynchronous challenges when internet access was available. Its analytics
+features aimed to help students understand performance across attempts instead
+of only seeing the result of one test. In this way, the project did not claim
+that no Exit Exam preparation applications exist. Rather, it addressed the
+remaining gap between isolated question-practice tools and a more complete,
+offline-capable preparation system suited to Afghan medical graduates’ learning
+and connectivity realities.
+25
+
+
+===== PAGE 44 =====
+
+
+===== PAGE 45 =====
+CHAPTER 3: METHODOLOGY
+This chapter explains the research and development methods used to design
+and implement Exit 360. It describes the quantitative questionnaire-based
+requirements elicitation process, the target population and sampling approach,
+data collection and analysis, system requirements, and the main development
+methodology followed during the project. It also presents the system design,
+architecture, database design, implementation approach, and testing activities
+that connect the identified preparation needs with the final mobile application.
+3.1
+Research Methodology
+This study used a quantitative research methodology to support the requirements
+elicitation for Exit 360. The main data collection instrument was a structured
+questionnaire administered to medical graduates and final-year students
+preparing for the Afghan Medical Exit Exam. It was used to measure candidates’
+preparation habits, access challenges, internet availability, feature priorities,
+and expected usefulness of an Exit Exam preparation mobile application.
+Before preparing the questionnaire, an initial feature set was derived from the
+literature review and analysis of existing medical exam preparation systems both
+local and foreign. The reviewed literature helped identify the educational value
+of repeated practice, timed tests, feedback, and progress monitoring, while the
+existing-system review showed how local and international preparation apps
+support question banks, mock tests, answer review, offline access, analytics, and
+online learning features. These sources were used to create a preliminary list of
+features for Exit 360, which was then presented to the target users through the
+questionnaire.
+The quantitative questionnaire responses were analyzed using descriptive
+statistics such as frequencies, percentages, mean scores, and priority rankings.
+This made it possible to summarize the main preparation problems faced by Exit
+Exam candidates and to identify which proposed features were considered most
+useful. The findings were then used to refine the functional and non-functional
+requirements of Exit 360, especially in areas such as offline question practice,
+timed mock tests, answer review, progress tracking, synchronization, and
+optional online competition.
+3.1.1
+Requirements Elicitation
+Requirements elicitation began by translating the problem context into a practical
+feature list for Exit 360. The literature review showed that Exit Exam candidates
+27
+
+
+===== PAGE 46 =====
+CHAPTER 3: METHODOLOGY
+need repeated practice, exam-like testing, feedback, and support for broad
+subject revision. The review of local and foreign medical exam preparation
+applications then helped identify common system patterns, such as question
+banks, timed mock tests, answer review, progress tracking, offline content, and
+online learning activities. These sources provided the starting point for defining
+what an Exit Exam preparation application should support.
+Based on this initial analysis, a preliminary set of proposed features was
+prepared for user validation. The proposed features included offline subject-wise
+practice, general practice tests, timed test sessions, automatic grading, answer
+review, attempt history, performance statistics, authenticated online profiles,
+synchronization, weekly tests, leaderboards, and challenge tests. The purpose
+of preparing this feature list was to make the requirements concrete enough
+for respondents to evaluate, rather than asking only general questions about
+whether a preparation application would be useful.
+A structured questionnaire was then used to collect feedback from the target
+users.
+The questionnaire measured preparation habits, access to practice
+tests, internet availability, previous use of preparation applications, perceived
+usefulness of proposed features, feature priority rankings, and willingness to
+use an offline-capable Exit Exam preparation app. These responses helped
+determine which requirements were most important for the first version of Exit
+360.
+The final requirements were therefore shaped by both literature-based feature
+identification and quantitative user feedback. This helped keep the application
+focused on real preparation needs, including offline access, organized question
+practice, timed mock testing, review, progress awareness, and optional online
+competition when internet access is available.
+3.1.2
+Population and Sampling
+The target population of this study consisted of individuals directly relevant to
+Afghan Medical Exit Exam preparation. This included curative medicine and
+stomatology graduates, as well as final-year curative medicine and stomatology
+students who were approaching graduation and preparing for the licensing
+exam. This population was selected because Exit 360 was intended for medical
+graduates and senior students who need support in subject-wise revision, practice
+testing, answer review, progress tracking, offline study, and optional online
+competition.
+Although a broader population of all curative medicine and stomatology students
+28
+
+
+===== PAGE 47 =====
+CHAPTER 3: METHODOLOGY
+could have been considered, it was not selected because it would include many
+students in earlier academic years who are not yet actively preparing for the
+Exit Exam. Such respondents may have limited experience with the pressure,
+preparation habits, and practical needs of the licensing stage. Their answers
+could therefore be less useful for evaluating features such as timed mock tests,
+Exit-focused question banks, review of previous attempts, and weekly online
+tests. For this reason, the study prioritized respondents who were closer to the
+exam and more able to judge the proposed features from a realistic preparation
+perspective.
+Graduates were included because they had already completed the medical
+or stomatology degree and were either preparing for the licensing exam or
+had direct experience with it.
+Final-year students were included because
+they represent the next group of likely candidates and are close enough to
+graduation to evaluate the usefulness of an Exit Exam preparation application.
+This combination helped balance retrospective experience from graduates with
+current preparation needs from senior students.
+For sample size estimation, the main population size was represented by the
+annual number of graduates taking the medical licensure examination. The
+official MoPH report on the second round of the 1404 medical licensure
+exam states that around 7,000 curative medicine and stomatology graduates
+participated in the examination process (Ministry of Public Health, 2026).
+Although the questionnaire also included final-year students, the annual
+examinee figure was used as the most practical available estimate of the
+core target population for the application.
+The sample size was considered using Cochran’s formula, which is commonly
+used for estimating representative survey samples (Cochran, 1977). Using
+the conventional Cochran parameters of a 95 percent confidence level, a 5
+percent margin of error, and an assumed population proportion of 0.5, the
+initial recommended sample size for a large population is approximately 384
+respondents. Since the estimated annual Exit Exam population is finite, the
+finite population correction was then applied using 𝑁= 7000, resulting in an
+adjusted recommended sample size of approximately 364 respondents. This
+number represents the ideal sample size for a more statistically representative
+survey of Exit Exam candidates.
+However, due to practical constraints such as limited time, limited access to
+respondents, and the limited project timeline, the study collected 47 valid
+responses. Data collection was focused on respondents who matched the target
+profile of medical graduates and final-year students. As a result, the sample
+29
+
+
+===== PAGE 48 =====
+CHAPTER 3: METHODOLOGY
+should be understood as a convenience sample rather than a fully representative
+national sample.
+Despite this limitation, the collected responses were considered appropriate
+for the purpose of this project. The questionnaire was used as a requirements
+elicitation and preliminary user evaluation instrument, not as a nationwide
+statistical survey. The goal was to identify user needs, validate proposed
+features, and support early design decisions for Exit 360. Therefore, while the
+achieved sample size is smaller than the statistically recommended sample, it
+still provided useful evidence for understanding the needs and priorities of the
+target users. The limited sample size and convenience sampling approach are
+acknowledged as limitations of the research.
+The Cochran sample size formula used for this estimate is shown below:
+𝑛0 = 𝑍2𝑝𝑞
+𝑒2
+where 𝑛0 is the estimated sample size for a large population, 𝑍is the z-score
+corresponding to the selected confidence level, 𝑝is the estimated proportion of
+the population with the attribute of interest, 𝑞= 1 −𝑝, and 𝑒is the accepted
+margin of error. Since no prior population proportion was available, the default
+value 𝑝= 0.5 was used because it gives the maximum required sample size.
+For a 95 percent confidence level, 𝑍= 1.96, 𝑝= 0.5, 𝑞= 0.5, and 𝑒= 0.05.
+𝑛0 = (1.96)2(0.5)(0.5)
+(0.05)2
+= 3.8416 × 0.25
+0.0025
+= 0.9604
+0.0025 = 384.16
+Therefore, the recommended sample size is approximately 384 respondents.
+However, the actual sample size can be adjusted for the finite annual Exit Exam
+population using the following formula:
+𝑛=
+𝑛0
+1 + 𝑛0−1
+𝑁
+where 𝑛is the adjusted sample size and 𝑁is the estimated population size.
+Using 𝑁= 7000:
+𝑛=
+384.16
+1 + 384.16−1
+7000
+= 384.16
+1.0547 ≈364.2
+30
+
+
+===== PAGE 49 =====
+CHAPTER 3: METHODOLOGY
+Therefore, the adjusted recommended sample size is approximately 364
+respondents. However, the actual number of valid responses collected was
+47, which is why the survey findings are used for requirements elicitation and
+preliminary user evaluation rather than for making nationwide statistical claims.
+3.1.3
+Data Collection
+Data for the user requirements part of the study were collected through a
+structured questionnaire. The questionnaire was selected because it allowed
+us to collect comparable responses from a group of respondents who were
+directly relevant to Exit Exam preparation within the limited project timeline. It
+also matched the purpose of this part of the research, which was to understand
+candidates’ preparation conditions, their access to practice tests and internet,
+and their level of interest in the proposed features of Exit 360.
+Two versions of the questionnaire were prepared. The English version was
+prepared for thesis documentation, while the Persian version was prepared
+for actual respondents so that the questions would be easier to understand
+and answer. Data collection was carried out through printed Persian copies
+distributed in person to eligible respondents. This approach was selected
+because the target respondents were more reachable through direct distribution,
+and it reduced the need for respondents to depend on an internet connection
+while completing the survey.
+The questionnaire was titled Exit 360 Survey Questionnaire. It began with a short
+introduction explaining that the survey was part of a Kabul University Software
+Engineering capstone project for developing an Exit Exam preparation mobile
+application. The introduction also informed respondents that participation was
+voluntary, that the survey was anonymous, and that no personal identifying
+information would be published.
+The questionnaire contained 28 items organized into five sections. The first
+section, Demographics, collected basic background information about the
+respondents. It asked about age, gender, original province, current study level,
+whether the respondent had already taken the Afghan Medical Exit Exam,
+and whether the respondent was attending an Exit Exam preparation course
+or coaching program. These items helped describe the respondent group and
+provided context for interpreting their answers.
+The second section, Current Practice and Access, focused on the respondents’
+existing preparation habits and access conditions. It included questions about
+how often respondents take mock or practice tests, how easy it is for them to
+31
+
+
+===== PAGE 50 =====
+CHAPTER 3: METHODOLOGY
+access practice tests on demand, how they currently prepare for the Exit Exam,
+how often they have internet access for studying, how reliable their internet
+connection is, how important offline access is to them, and whether they have
+used any Exit Exam or medical exam preparation app before. This section was
+included because Exit 360 was intended to respond to real preparation barriers,
+especially access to practice questions, internet limitations, and the usefulness
+of offline support.
+The third section, Feature Interest and Priorities, asked respondents to
+evaluate the planned features of Exit 360. It presented six proposed features:
+offline practice tests, performance analytics dashboard, subject-wise weak-area
+tracking, user profiles and peer following, online weekly competitive tests
+and leaderboards, and peer-to-peer challenge mode. Respondents rated the
+usefulness of each feature on a five-point scale from Not at all useful to
+Extremely useful. They were also asked to select and rank their top three
+most important features, and to indicate how likely they would be to use an
+Exit Exam preparation mobile application with these features. This section
+directly supported requirements prioritization because it showed which proposed
+features were most valued by potential users.
+The fourth section, Perceived Impact, measured respondents’ agreement with
+statements about the expected benefits of the application. The statements asked
+whether the app would improve exam preparation, help students practice more
+frequently, help identify strengths and weaknesses, help them focus on subjects
+where they need more practice, motivate more consistent study, increase exam
+confidence, and make it easier to study anywhere and anytime. These items
+used a five-point agreement scale from Strongly Disagree to Strongly Agree.
+This section helped capture the perceived educational value of the proposed
+system, not only interest in individual features.
+The fifth section, Experience and Open Feedback, included open-ended
+questions.
+These questions asked respondents about the biggest barriers
+they face in preparing for the Exit Exam, what they liked and disliked about any
+Exit Exam or medical exam preparation apps they had used, what features would
+make them choose an exam preparation app over paper-based or center-based
+methods, and any additional comments or suggestions regarding an exam
+preparation platform. These open questions were included to allow respondents
+to express issues or ideas that might not be fully captured by fixed-choice
+questions.
+Overall, the questionnaire combined multiple item types, including short-
+answer demographic items, multiple-choice questions, five-point usefulness
+32

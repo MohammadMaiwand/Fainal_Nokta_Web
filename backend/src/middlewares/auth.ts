@@ -2,18 +2,20 @@ import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 import { config } from '../config/env';
 import { createError } from '../helpers/response';
-import { hasPermission, permissionFromLegacy, permissionFromRoute } from '../utils/roleHelpers';
+import { permissionFromLegacy, roleMatches } from '../utils/roleHelpers';
 import { User } from '../models/User';
 import { normalizeRole } from '../utils/roleHelpers';
 import { SessionService } from '../services/sessionService';
 import { PermissionService } from '../services/permissionService';
 import { RoleProfileService } from '../services/roleProfileService';
 import type { RoleType } from '../types';
+import { AuditLog } from '../models/AuditLog';
 
 export interface AuthPayload {
   userId: string;
   role: RoleType;
   canonicalRole?: string;
+  tokenVersion?: number;
   branchId?: string | null;
   sessionId?: string;
   jti?: string;
@@ -38,14 +40,17 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     const currentUser = await User.findById(payload.userId)
-      .select('role branchId permissionKeys revokedPermissionKeys permissions status isDeleted')
+      .select('role branchId permissionKeys revokedPermissionKeys permissions status isDeleted authVersion')
       .lean<Record<string, any>>();
 
     if (!currentUser || currentUser.isDeleted) {
       return res.status(401).json(createError('Invalid token'));
     }
+    if (Number(payload.tokenVersion ?? 0) !== Number((currentUser as any).authVersion || 0)) {
+      return res.status(401).json(createError('Session has expired'));
+    }
 
-    if (['locked', 'suspended', 'inactive'].includes(String(currentUser.status || 'active'))) {
+    if (['locked', 'suspended', 'inactive', 'blocked', 'expired'].includes(String(currentUser.status || 'active'))) {
       return res.status(403).json(createError(`Account is ${currentUser.status}`));
     }
 
@@ -54,16 +59,23 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       ? await roleProfileService.getRolePermissionOverride(canonicalRole)
       : null;
 
-    req.user = {
+    const legacyPermissions = currentUser.permissions instanceof Map
+      ? Object.fromEntries(currentUser.permissions.entries())
+      : currentUser.permissions ?? {};
+
+    const authUser: Express.Request['user'] = {
       userId: payload.userId,
       role: currentUser.role,
       canonicalRole,
       branchId: currentUser.branchId?.toString?.() ?? null,
       sessionId: sessionId ?? null,
       permissionKeys: Array.isArray(currentUser.permissionKeys) ? currentUser.permissionKeys : [],
+      revokedPermissionKeys: Array.isArray(currentUser.revokedPermissionKeys) ? currentUser.revokedPermissionKeys : [],
+      permissions: legacyPermissions,
       rolePermissionKeys: rolePermissionKeys ?? undefined
     };
 
+    req.user = authUser;
     next();
   } catch {
     return res.status(401).json(createError('Invalid token'));
@@ -77,21 +89,27 @@ export function authorize(allowedRoles: string[]) {
       return res.status(403).json(createError('Access denied'));
     }
 
-    if (permissionService.hasRequiredAccess({ role }, { prefix: req.originalUrl, roles: allowedRoles as any })) {
+    const canonicalRole = normalizeRole(role);
+    if (canonicalRole === 'super_admin') {
       return next();
     }
 
-    const requestPermission = permissionFromRoute(req.originalUrl, req.method);
-    if (requestPermission && hasPermission(req.user, requestPermission)) {
-      return next();
+    if (!roleMatches(role, allowedRoles)) {
+      void AuditLog.create({
+        actor: req.user?.userId,
+        branchId: req.user?.branchId ?? null,
+        action: 'PERMISSION_DENIED_ROUTE',
+        targetType: 'route',
+        target: req.originalUrl,
+        severity: 'warning',
+        metadata: { method: req.method, requiredRoles: allowedRoles },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? ''
+      }).catch(() => undefined);
+      return res.status(403).json(createError('Access denied'));
     }
 
-    const policy = requestPermission ? null : permissionService.getRoutePolicy(req.originalUrl, req.method);
-    if (policy?.permissions?.length && permissionService.hasRequiredAccess(req.user, policy)) {
-      return next();
-    }
-
-    return res.status(403).json(createError('Access denied'));
+    return next();
   };
 }
 

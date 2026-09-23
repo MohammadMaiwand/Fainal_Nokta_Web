@@ -1,0 +1,264 @@
+[Heading 2] CHAPTER 3: METHODOLOGY
+[Normal] This chapter explains the research and development methods used to design and implement NAMS. Its organization follows a rigorous software-engineering thesis progression: research methodology; requirements elicitation; population and sampling; data collection and analysis; functional, non-functional, and data requirements; development methodology; prototype iterations; system design; architecture and database design; implementation; testing; and challenges and solutions. Research methodology and development methodology are deliberately separated because they answer different questions: the former explains how evidence was gathered, while the latter explains how the software artifact was engineered.
+[Normal] NAMS addresses a multi-domain management problem. Academic records, attendance, examinations, finance, communication, and reporting are not independent. A methodological approach that studies only the interface would therefore be insufficient. The project uses evidence triangulation and iterative development so that broad stakeholder needs can be converted into traceable, testable system behavior.
+[Heading 3] 3.1 Research Methodology
+[Normal] The research component used an applied, requirements-oriented mixed-method approach. Quantitative evidence was used to summarize organizational acceptance and structured responses, while qualitative evidence was used to interpret workflow problems and adoption barriers. The purpose was to produce defensible requirements for a real academy management system rather than to claim nationwide statistical generalization.
+[Normal] The unit of analysis was the academy as an organization. Respondents were expected to have operational knowledge of registration, teaching, finance, reporting, or management. The study therefore focused on institutional workflows and readiness. Survey evidence was combined with workflow analysis, role analysis, proposal review, and prototype feedback.
+[Heading 3] 3.1.1 Research Design
+[Normal] A cross-sectional design was appropriate because requirements had to be captured during the system-development period. The questionnaire was structured around current practices, academic administration, financial management, communication, reporting, technology readiness, and acceptance of an integrated platform.
+[Normal] The design incorporated both closed and open items. Closed questions support frequencies and percentages. Open responses provide explanations for barriers that cannot be represented adequately by a single numeric choice. This combination is especially useful when a system may be perceived as valuable but adoption is constrained by infrastructure or staffing.
+[Heading 3] 3.1.2 Requirements Elicitation
+[Normal] Requirements were elicited through five complementary sources: the approved project direction and Chapters 1–2; a structured academy survey; analysis of current and desired workflows; stakeholder and role analysis; and iterative prototype review. A requirement was considered stronger when multiple sources supported it.
+[Normal] For example, financial transparency was not translated into a single generic 'finance module.' It was decomposed into fee obligations, payment transactions, remaining balances, debt status, income, expenses, payroll, government tax, net salary, permissions, and reports. Similarly, examination management was decomposed into online and in-person modes, question types, validation, results, and printing.
+[Heading 3] 3.1.3 Population and Sampling
+[Normal] The accessible organizational population consisted of approximately 20 academies considered relevant to the project context. Because the accessible population was small, the preferred approach was to approach all 20 rather than draw a substantially smaller sample. This is effectively a census of the accessible group for requirements purposes.
+[Normal] Cochran’s initial sample-size formula is n₀ = Z²p(1−p)/e². For a finite population, the corrected sample is n = n₀/[1 + (n₀−1)/N]. The formula is presented to demonstrate sampling knowledge; however, when N is only 20 and the full accessible group can be approached, surveying all accessible organizations provides more direct requirements evidence. The result should therefore be described as evidence from the accessible group, not as a statistically representative estimate for all Afghan academies.
+[Heading 3] 3.1.4 Data Collection Procedure
+[Normal] Data collection began by mapping the research questions and objectives to information needs. Questionnaire items were then written around recognizable academy tasks. Respondents were asked about current management conditions, perceived usefulness of integrated modules, and readiness constraints. Responses were checked for completeness and organized for descriptive analysis.
+[Normal] Non-survey evidence was recorded in parallel. Workflow analysis identified where the same information was entered repeatedly or reconciled manually. Role analysis identified who should access each type of data. Prototype review recorded gaps that became requirements in subsequent iterations. This combined evidence improved traceability.
+[Heading 3] 3.1.5 Data Analysis Method
+[Normal] Descriptive statistics were selected as the primary quantitative analysis method. Frequencies and percentages summarize categorical responses. Likert-type ratings can be summarized using distributions and, where justified, means or weighted rankings when raw data exist. No additional numerical result should be inserted without the corresponding dataset.
+[Normal] Qualitative comments were grouped into practical themes such as operational efficiency, financial transparency, reporting, communication, staff capability, and technology readiness. Thematic grouping was used to explain why some organizations might support the system concept but remain unable to adopt it immediately.
+[Normal] Table 3.1
+Requirements Elicitation Methods
+[Normal] Table 3.2
+Organizational Acceptance Summary
+[Normal] 1.6 Questionnaire Structure
+[Normal] The questionnaire should be retained in Appendix A. Its main sections should cover respondent/academy profile, current record-management practice, academic workflows, financial workflows, communication, reporting, technology readiness, desired features, and adoption intention. Each question should have a clear analytical purpose and a direct relationship to one or more requirements.
+[Normal] Table 3.3
+Questionnaire Design Framework
+[Heading 3] 3.1.7 Ethical and Data Protection Considerations
+[Normal] The survey should avoid unnecessary collection of personal identifiers. Organizational responses should be reported in aggregate unless explicit permission exists to identify an institution. The thesis should distinguish public information from private academic and financial information. Within NAMS, privacy principles are translated into access control, role separation, and the explicit distinction between public announcements and user-specific alerts.
+[Normal] Financial and academic data require stronger protection because unauthorized disclosure or modification can affect individuals and institutional trust. Authentication, backend authorization, validation, audit metadata, backup, and controlled reporting are therefore treated as engineering requirements rather than optional interface features.
+[Heading 3] 3.1.8 Functional Requirements
+[Normal] Table 3.4
+Functional Requirements
+[Heading 3] 3.1.9 Non-Functional Requirements
+[Normal] Table 3.5
+Non-Functional Requirements
+[Heading 3] 3.1.10 Data Requirements
+[Normal] NAMS requires persistent records for identity, roles, students, parents, teachers, managers, branches, classes, subjects, enrollments, timetables, attendance, examinations, questions, answers, results, announcements, notifications, fee obligations, payments, debts, income, expenses, payroll, tax, and reports. Referential integrity must be maintained through identifiers, validation, and controlled service logic.
+[Normal] Financial data should preserve transaction history rather than relying on editable summary numbers. A student’s outstanding balance is conceptually derived from obligations minus valid payments. Payroll should preserve gross salary, applicable deductions/tax, net salary, calculation period, and rule metadata. These principles support auditability and consistent reporting.
+[Heading 3] 3.1.11 Requirements Validation and Prioritization
+[Normal] Requirements were reviewed for necessity, clarity, feasibility, consistency, and testability. A MoSCoW-style approach was used to distinguish Must-Have operational capabilities from later enhancements. Core identity, students, classes, attendance, examinations, payments, debt, payroll, tax, and reports were treated as high priority because other dashboards and analytics depend on trustworthy source data.
+[Normal] Advanced AI prediction is intentionally classified as future-oriented unless a validated model and sufficient historical dataset are available. This prevents the thesis from overstating AI capability while preserving the project’s analytics direction.
+[Heading 2] 3.2 Development Methodology
+[Normal] Development followed an Agile methodology with lightweight Scrum organization, combined with explicit SDLC activities. This mirrors the useful development logic of the Exit 360 reference while adapting it to the much broader NAMS domain. Iterative work allowed missing business rules to be corrected without discarding completed modules.
+[Heading 3] 3.2.1 Agile Development Approach
+[Normal] The backlog was organized around coherent domains and dependencies. Authentication and permissions preceded protected modules. Student/class/enrollment foundations preceded attendance and fee obligations. Examination definitions preceded results and printing. Financial foundations preceded debt, payroll, tax, and consolidated reports. Each iteration included implementation, integration, testing, review, and documentation.
+[Normal] Figure 3.1. Hybrid Agile–SDLC development cycle for NAMS.
+[Normal] Note. Original NAMS process model; arrows show iterative feedback.
+[Heading 3] 3.2.2 Scrum-Based Organization
+[Normal] A lightweight Scrum model was appropriate for a small capstone team. Product-backlog items represented features, defects, technical tasks, tests, and documentation. Sprint-style iterations focused on a manageable subset of work. Supervisor and stakeholder review informed backlog reprioritization. Definition-of-done criteria included functional behavior, backend integration, permission checks, basic testing, and documentation for high-risk modules.
+[Heading 3] 3.2.3 Prototype Strategy
+[Normal] Three major prototypes document the evolution of NAMS. The prototypes are functional milestones rather than merely visual mockups. Each stage has a problem statement, implemented scope, review finding, and resulting change.
+[Normal] Figure 3.2. Three-prototype evolution of NAMS.
+[Heading 3] 3.2.4 Prototype 1 — Core Integrated Baseline
+[Normal] Prototype 1 established authentication, role dashboards, students, teachers, classes, attendance, examinations, results, payments, and initial financial views. The purpose was to verify that the principal academy domains could operate in one connected platform.
+[Normal] The review identified a financial gap: government salary tax was not explicitly represented in the payroll flow. Without this element, gross salary and net payable salary could not be documented transparently. The gap was therefore converted into a formal requirement for Prototype 2.
+[Normal] Reserved Figure 3.3 should contain original screenshots of the Prototype 1 dashboard and initial payroll/finance screen. The paragraph after the screenshots should identify the missing tax field and explain why it affected financial completeness.
+[Heading 3] 3.2.5 Prototype 2 — Government Tax and Financial Correction
+[Normal] Prototype 2 refined the financial subsystem. Payroll was redesigned to distinguish gross salary, applicable tax or deductions, and net salary. Financial reports were reorganized so that authorized users could understand the origin of totals instead of viewing disconnected values.
+[Normal] The exact tax formula must be based on an authoritative and current Afghan legal source. The implementation should keep tax rules configurable or versioned so historical payroll can remain reproducible when rules change.
+[Normal] Prototype 2 review revealed the need for explicit debt management. Unpaid balances should not be inferred manually from separate screens. This finding motivated Prototype 3.
+[Normal] Reserved Figure 3.4 should contain the corrected payroll, tax, net salary, and financial-report screenshots. The text following the figure should describe the calculation inputs, role permissions, and reporting outputs.
+[Heading 3] 3.2.6 Prototype 3 — Debt and Printing Enhancements
+[Normal] Prototype 3 introduced explicit student debt management by connecting fee obligations to payment transactions and remaining balances. Authorized users can identify unpaid or partially paid obligations and review payment history.
+[Normal] The prototype also introduced class-specific attendance printing. A printable sheet is generated from system data and can include academy, class, subject, teacher, date, student roster, attendance columns, and signature areas.
+[Normal] The examination module was extended so authorized users can print question papers directly from stored exams. Descriptive, multiple-choice, and true/false questions are rendered according to their type. An optional answer key can be restricted to authorized staff.
+[Normal] Reserved Figures 3.5–3.7 should contain original debt, attendance-print, and exam-builder/print screenshots. Each screenshot group should be introduced before the image and interpreted afterward.
+[Heading 2] 3.3 System Design
+[Normal] System design converts validated requirements into complementary behavioral, structural, architectural, and data models. The artifact sequence follows recognized software-engineering practice: use case model, sequence diagrams, data-flow models, architecture, database design, class model, and deployment view. Each diagram below is specific to NAMS.
+[Heading 3] 3.3.1 Use Case Model
+[Normal] The use case model places NAMS within a system boundary and keeps external actors outside it. Actors include administrators, teachers, students, parents, managers, and finance-authorized users. The model shows major responsibilities but does not replace detailed RBAC rules.
+[Normal] Figure 3.8. High-level UML use case diagram for NAMS.
+[Normal] The diagram shows why role separation is central. A finance user may manage payments and payroll without receiving unrestricted user-administration privileges. A student can view permitted results but cannot alter exam definitions. A parent’s access is limited to linked children. Backend authorization must enforce these rules even if the UI hides unavailable actions.
+[Normal] 3.3.2 Sequence Diagrams
+[Normal] Sequence diagrams were prepared for workflows where ordering, validation, and data consistency are important. Enrollment, payment, attendance, examinations, and payroll were selected because they cross multiple system layers.
+[Normal] Figure 3.9. Sequence diagram for student enrollment and fee obligation.
+[Normal] Enrollment creates a relationship between student and class and can establish the financial obligation used later by payment and debt workflows.
+[Normal] Figure 3.10. Sequence diagram for payment, receipt, and debt update.
+[Normal] Payment is treated as a validated transaction. Remaining balance is recalculated from source records rather than edited as an arbitrary value.
+[Normal] Figure 3.11. Sequence diagram for attendance recording and printing.
+[Normal] The workflow retrieves the enrolled roster, stores attendance by class/date/student, and generates a printable sheet from persisted data.
+[Normal] Figure 3.12. Sequence diagram for examination creation and question-paper printing.
+[Normal] The print service retrieves the same stored exam and questions used by the application, preserving consistency.
+[Normal] Figure 3.13. Sequence diagram for teacher payroll and government tax.
+[Normal] Payroll uses authorized inputs and a verified tax rule to preserve gross, tax/deductions, and net salary.
+[Heading 3] 3.3.3 Data Flow Diagrams
+[Normal] The DFDs describe movement of information rather than object-oriented structure. A consistent process/data-store notation is used. Level 0 treats NAMS as one process; Level 1 decomposes it into major management processes.
+[Normal] Figure 3.14. DFD Level 0 — NAMS context diagram.
+[Normal] The context diagram identifies the principal external actor groups and the two-way exchange of requests, records, notifications, and reports with NAMS.
+[Normal] Figure 3.15. DFD Level 1 — major NAMS processes and data stores.
+[Normal] The Level 1 model separates access, academic, examination, financial, communication, and reporting processes. This separation supports clearer permissions, testing, and audit responsibilities.
+[Heading 3] 3.3.4 Architectural Design
+[Normal] The architecture separates presentation, API/security, domain services, and persistence/infrastructure. React web and Flutter mobile clients share backend rules through authenticated APIs. Cross-cutting middleware handles identity, authorization, validation, and audit concerns. Domain services encapsulate business rules so calculations are not duplicated across clients.
+[Normal] Figure 3.16. Layered/C4-inspired architecture of NAMS.
+[Normal] The architecture supports maintainability and scalability. A future notification provider, PDF generator, or analytics service can be replaced behind an adapter without rewriting core academic logic. Similarly, mobile and web clients can evolve independently while relying on the same authoritative backend calculations.
+[Heading 3] 3.3.5 Database Design
+[Normal] The conceptual ERD represents relationships among core academic and financial entities. Although MongoDB is document-oriented, conceptual cardinalities remain important for data integrity and reporting.
+[Normal] Figure 3.17. Conceptual ERD for NAMS core domains.
+[Normal] Students and classes are connected through enrollments. Fee obligations belong to enrollment context and receive payment transactions. Exams contain questions and produce results. Teachers receive payroll records that may have tax records. These relationships prevent disconnected totals and support traceable reports.
+[Heading 2] 3.3.6 Class Diagram
+[Normal] The UML class model focuses on domain responsibilities rather than duplicating every database field. It highlights selected entities and operations that carry business behavior.
+[Normal] Figure 3.18. UML class diagram for selected NAMS domain classes.
+[Normal] The model distinguishes persistent concepts from operations. For example, FeeObligation owns remaining-balance behavior conceptually, while PayrollRecord preserves gross, tax, and net values. Service-layer implementations may coordinate these operations in the actual codebase.
+[Heading 2] 3.3.7 Deployment Design
+[Normal] The deployment view shows the operational separation between user devices, clients, the application server, database, and supporting infrastructure. Production deployment should use secure transport, environment-specific configuration, protected secrets, backups, monitoring, and controlled network exposure.
+[Normal] Figure 3.19. Deployment view of NAMS.
+[Heading 2] 3.4 Implementation
+[Normal] Implementation translated the design into a modular full-stack system using Node.js and Express.js, MongoDB, React, and Flutter-oriented mobile components. The implementation was organized by domain to keep authentication, academic workflows, finance, communication, and reporting maintainable.
+[Heading 3] 3.4.1 Development Environment
+[Normal] The development environment includes Node.js tooling, package management, MongoDB, React development tools, Flutter/Dart SDK, Android tooling for physical-device testing, Git/GitHub, browser developer tools, and API-testing utilities. Environment variables should separate local, testing, and production configuration.
+[Heading 3] 3.4.2 Backend Implementation
+[Normal] Express routes receive requests and delegate to middleware and domain services. Authentication verifies identity; authorization verifies permission; validation checks request data; services implement business rules; persistence code reads and writes MongoDB. Centralized error handling should return consistent responses without leaking sensitive internal details.
+[Heading 3] 3.4.3 Web Frontend Implementation
+[Normal] The React web application supports administration, finance, reports, and other desktop-oriented workflows. Reusable components, consistent form validation, protected routes, loading/error states, and responsive layout improve maintainability and usability.
+[Heading 3] 3.4.4 Mobile Application Implementation
+[Normal] The Flutter mobile application provides role-specific access for supported users. Mobile design must account for smaller screens, RTL/LTR direction, intermittent connectivity, physical-device API access, and clear separation of public and authenticated experiences.
+[Heading 3] 3.4.5 Authentication and RBAC
+[Normal] Security depends on backend enforcement. A hidden button is not an authorization control. Protected API operations must verify authenticated identity and required permission. Role definitions should be centralized and tested against unauthorized requests.
+[Heading 3] 3.4.6 Academic Modules
+[Normal] Student, teacher, class, subject, enrollment, timetable, and attendance modules form the academic foundation. Their identifiers and relationships are reused by examinations, results, payments, and reports.
+[Heading 3] 3.4.7 Examination Module
+[Normal] The examination subsystem supports online and in-person workflows. In-person exams use typed questions: descriptive questions store a prompt; MCQs store options and a correct answer when grading requires it; true/false questions restrict options to the logical pair. Printing uses stored content.
+[Heading 3] 3.4.8 Financial Module
+[Normal] The financial subsystem separates obligations, transactions, debt, income, expenses, payroll, tax, and reports. Remaining debt is derived from obligations and valid payments. Payroll preserves calculation inputs and outputs. Sensitive operations require finance/management permissions.
+[Heading 3] 3.4.9 Communication Module
+[Normal] Public announcements and private alerts are stored and retrieved through different access paths. Public pages may show published academy notices, but personal payment, account, or academic alerts must be limited to the intended authenticated user or authorized related role.
+[Heading 3] 3.4.10 Reporting and Printing
+[Normal] Reports should be generated from authoritative source records. Printable attendance and examination documents use consistent templates. Financial reports should identify period, filters, totals, and underlying categories. Exported documents should include sufficient context to remain understandable outside the application.
+[Heading 3] 3.4.11 Analytics and AI Readiness
+[Normal] NAMS prepares structured data for future analytics. Attendance trends, examination results, enrollment, and operational indicators can support later analysis. Predictive AI should not be claimed as validated until a sufficient dataset, evaluation protocol, privacy controls, and human oversight are available.
+[Normal] Table 3.6 Technology Stack
+[Heading 2] 3.5 Core Algorithms and Business Rules
+[Normal] Core business rules are documented because financial and academic correctness depends on more than CRUD operations. The algorithms below are conceptual and should be aligned with the final implementation.
+[Normal] Table 3.7 Core Business Rules
+[Normal] 3.6 Testing
+[Normal] Testing follows the reference thesis progression of unit testing, integration testing, and user acceptance testing, expanded for NAMS with system, security, localization, and financial verification. Actual pass/fail claims should be supported by execution evidence.
+[Heading 3] 3.6.1 Unit Testing
+[Normal] Table 3.8 Unit Test Cases
+[Heading 3] 3.6.2 Integration Testing
+[Normal] Table 3.9 Integration Test Cases
+[Heading 3] 3.6.3 System and Security Testing
+[Normal] System testing evaluates complete end-to-end workflows under realistic roles. Security testing includes invalid tokens, missing permissions, direct API requests, input validation, and attempts to access another user’s protected data. Financial tests use known values and independently calculated expected results. Localization tests switch languages and verify text direction, overflow, navigation, and form behavior.
+[Normal] Table 3.10 System and Security Test Coverage
+[Heading 3] 3.6.4 User Acceptance Testing
+[Normal] UAT should use representative role-based tasks rather than asking only whether the interface looks good. Participants should attempt realistic workflows and evaluators should record task completion, errors, assistance, and comments. If final numerical UAT data are unavailable, the thesis should report prototype feedback qualitatively and reserve quantitative claims until evidence exists.
+[Normal] Table 3.11  UAT Task Matrix
+[Heading 2] 3.7 Challenges and Solutions
+[Normal] Table 3.12 Major Challenges and Engineering Responses
+[Heading 1] CHAPTER 4: RESULTS
+[Normal] This chapter presents the questionnaire-oriented results and principal engineering outcomes. Its subsection sequence follows the result-reporting logic of the Exit 360 reference—respondent profile, current conditions, feature priorities, adoption, perceived impact, and summary—adapted to the NAMS context. Only confirmed numerical data are presented as survey facts.
+[Heading 2] 4.1 Questionnaire Results
+[Heading 3] 4.1.1 Respondent and Academy Profile
+[Normal] The accessible group consisted of 20 academies represented by individuals familiar with organizational operations. Because the unit of analysis was the academy, the principal result is reported at institutional level. The final appendix should contain the questionnaire and anonymized response summary.
+[Heading 3] 4.1.2 Current Management and Technology Conditions
+[Normal] Requirements analysis identified dependence on manual or disconnected processes for academic and financial management. The three non-ready academies specifically highlighted computer and suitable-staff limitations. This demonstrates that technology adoption requires facilitating conditions in addition to software usefulness.
+[Normal] Figure 4.1. Acceptance and technology-readiness constraint summary.
+[Normal] Note. The second category represents the three academies that were not currently ready because of computer/staff constraints.
+[Heading 3] 4.1.3 Adoption and Acceptance
+[Normal] Seventeen of the 20 academies were recorded as supportive or approving the proposed NAMS direction. This equals 85%. Three academies, or 15%, were not currently ready. The result indicates strong interest within the accessible group but should not be generalized automatically to all Afghan academies.
+[Normal] Figure 4.2. Organizational acceptance of NAMS (N = 20).
+[Normal] Note. Source: researcher-supplied project survey result.
+[Heading 3] 4.1.4 Feature Priorities
+[Normal] The project prioritized core operational modules according to workflow dependency and prototype evidence. Academic records, attendance, examinations, payments/debt, payroll/tax, and reporting are foundational because dashboards and analytics depend on them. Communication and mobile access are also important but must operate on trustworthy source data and correct permissions.
+[Heading 3] 4.1.5 Perceived Impact
+[Normal] The system is expected to improve operational efficiency by reducing repeated entry and connecting workflows; improve financial transparency by linking obligations, payments, debt, payroll, tax, and expenses; improve communication through controlled announcements and private alerts; and improve management visibility through reports. These are design-supported expectations. Long-term impact requires post-deployment measurement.
+[Heading 3] 4.1.6 Prototype Results
+[Normal] Table 4.1  Prototype Evolution Results
+[Normal] The prototype sequence provides a traceable history of requirements refinement. It demonstrates that later features were not arbitrary additions: each responded to a specific gap identified in the preceding stage.
+[Heading 3] 4.1.7 Engineering Results
+[Normal] The project produced an integrated architecture, role model, database design, academic modules, financial workflows, communication separation, printing capabilities, and a structured testing framework. The engineering artifacts include use cases, five sequence diagrams, two DFD levels, architecture, ERD, class diagram, deployment view, requirement tables, traceability, and test matrices.
+[Heading 3] 4.1.8 Summary of Findings
+[Normal] Table 4.2   Summary of Main Findings
+[Heading 1] CHAPTER 5: DISCUSSION
+[Normal] This chapter interprets the survey and engineering results in relation to the research questions, objectives, literature themes, and limitations. The discussion distinguishes implemented capability from empirically proven long-term impact.
+[Heading 2] 5.1 Interpretation of Main Findings
+[Normal] The findings indicate that academy management is a connected information problem. Enrollment affects class membership and fee obligations; attendance and exams depend on class membership; results support monitoring; payments determine debt; teacher assignments affect payroll; and all domains contribute to reporting. Integration therefore creates value through consistency across workflows.
+[Normal] The 85% support result suggests meaningful interest within the accessible group. The 15% non-readiness result is equally informative because it identifies facilitating conditions—computers and suitable staff—as adoption constraints. A deployment plan should therefore include onboarding and readiness assessment.
+[Heading 2] 5.2 Discussion of Financial Transparency
+[Normal] Financial transparency is a distinguishing requirement of NAMS. A generic learning platform may manage courses without modeling the academy’s operational finances. NAMS connects fee obligations, payment transactions, remaining debt, expenses, payroll, government tax, and reports.
+[Normal] The prototype history shows that financial completeness evolved iteratively. Government tax was a missing requirement in Prototype 1; Prototype 2 corrected payroll visibility; Prototype 3 added explicit debt. This progression supports the argument that prototype review can reveal business rules that high-level requirements overlook.
+[Heading 2] 5.3 Discussion of Academic and Examination Workflows
+[Normal] Attendance and examinations are linked to the class/enrollment model so that records remain contextual. The internal exam builder supports descriptive, multiple-choice, and true/false questions. Printing from stored questions reduces duplicate preparation and preserves consistency between digital and paper artifacts.
+[Normal] Future evaluation should measure whether these workflows actually reduce staff time or errors. The present monograph can demonstrate implemented capability but should avoid claiming measured efficiency gains without before-and-after data.
+[Heading 2] 5.4 Communication, Privacy, and RBAC
+[Normal] Public announcements and personal alerts have different privacy expectations. The system design separates them so public pages display academy notices rather than user-specific warnings. RBAC further restricts sensitive operations such as payroll, tax, debt, and role management.
+[Normal] Security must be enforced at the API layer. Interface hiding improves usability but cannot prevent direct unauthorized requests. This principle is reflected in the security testing plan.
+[Heading 2] 5.5 AI and Learning Analytics Direction
+[Normal] The project’s AI direction should be interpreted as an analytics-ready foundation. Structured attendance, results, enrollment, and learning records can later support risk detection or recommendations. However, responsible predictive analytics requires sufficient historical data, model validation, fairness analysis, privacy protection, and human oversight.
+[Normal] This distinction strengthens academic credibility because it separates future potential from demonstrated results.
+[Heading 2] 5.6 Adoption and Local Context
+[Normal] The three non-ready academies demonstrate that local context affects deployment. Hardware availability, staff digital skills, connectivity, training, and organizational routines can determine whether a system is used successfully. Mobile access may reduce some barriers but cannot replace administrative capacity.
+[Normal] A phased pilot at Nokta Academy followed by broader academy deployment would provide stronger evidence than immediate large-scale rollout.
+[Heading 2] 5.7 Research Question Answer Matrix
+[Normal] Table 5.1   Research Question Answer Matrix
+[Heading 2] 5.8 Objective Achievement Discussion
+[Normal] The core integrated-management objective is substantially addressed through the architecture and modules. Financial transparency is addressed at project scope through payment, debt, payroll, tax-oriented design, expenses, and reports. Mobile access is implemented as a project direction and requires continued physical-device validation. AI prediction remains future work. Testing is structurally addressed, but final claims should reflect actual execution evidence.
+[Heading 2] 5.9 Comparison with Existing-System Categories
+[Normal] Table 5.2   Conceptual Comparison with Existing-System Categories
+[Heading 2] 5.10 Limitations
+[Normal] The accessible survey group is small and geographically/contextually limited. The 17/3 result is requirements evidence, not national adoption proof. Long-term production performance, multi-branch scalability, formal penetration testing, disaster recovery, and longitudinal educational impact remain to be evaluated. Tax rules require authoritative verification. Advanced AI is not yet validated. Formal UAT results require actual participants and recorded task evidence.
+[Heading 1] CHAPTER 6: CONCLUSION AND FUTURE WORK
+[Heading 2] 6.1 Summary of Work Done
+[Normal] This project designed and implemented NAMS as an integrated academy management platform. The work connected research evidence, requirements engineering, iterative prototypes, system design, implementation, testing, results, and discussion. The methodology separated evidence collection from software development, improving clarity and traceability.
+[Normal] The final design includes role-based access, students, parents, teachers, classes, subjects, enrollments, attendance, timetables, examinations, typed questions, results, payments, debt, payroll, government-tax-oriented calculations, income, expenses, announcements, private alerts, reports, dashboards, multilingual interfaces, printing, and an analytics-ready data foundation.
+[Heading 2] 6.2 Key Contributions
+[Normal] The academic contribution is a locally focused software-engineering study documenting how fragmented academy workflows can be translated into a structured integrated system. The practical contribution is the connection of academic and financial processes. The technical contribution is a modular web/mobile/API/data architecture. The process contribution is the documented three-prototype evolution. The privacy contribution is explicit public/private communication separation.
+[Heading 2] 6.3 Achievement of Objectives
+[Normal] Table 6.1  Objective Achievement Status
+[Heading 2] 6.4 Recommendations
+[Normal] A controlled pilot should be conducted at Nokta Academy before wider deployment. The pilot should measure task completion time, reporting accuracy, payment reconciliation, debt follow-up, user satisfaction, and support needs. Staff training and minimum hardware guidance should be prepared for institutions with readiness constraints.
+[Normal] Production readiness should include secure deployment, HTTPS, secret management, database backup, restoration drills, monitoring, audit logging, automated testing, dependency maintenance, and formal security review. Financial rules should be configurable and legally verified.
+[Heading 2] 6.5 Future Enhancements
+[Normal] Future enhancements may include stronger offline synchronization, push notifications, configurable billing plans, branch comparison, advanced report templates, inventory/document management where justified, and expanded parent services. Feature expansion should preserve modular architecture and permission boundaries.
+[Normal] AI features should be developed only after sufficient clean historical data exist. Candidate directions include attendance-risk detection, performance trend analysis, learning-resource recommendations, and management summaries. Models should be evaluated for accuracy, bias, explainability, privacy, and appropriate human review.
+[Heading 2] 6.6 Final Conclusion
+[Normal] NAMS demonstrates a coherent approach to integrating academic administration, finance, communication, reporting, and operational printing within one academy management platform. The project’s strongest contribution is not the number of screens but the relationships between workflows: enrollment connects to fees, payments connect to debt, teacher work connects to payroll, examinations connect to results and printing, and role permissions govern access throughout.
+[Normal] The project also demonstrates the importance of iterative refinement. The progression from the Prototype 1 tax gap to Prototype 2 financial correction and Prototype 3 debt/printing enhancements shows how a capstone system can mature through structured feedback. With further production testing, broader user evaluation, verified financial rules, and responsible analytics development, NAMS can provide a strong foundation for digital transformation in private academy management.
+[Normal] APPENDIX A: PROPOSED ACADEMY REQUIREMENTS QUESTIONNAIRE
+[Normal] 1. What is your role in the academy?
+[Normal] 2. How are student registrations currently recorded?
+[Normal] 3. How is attendance currently recorded?
+[Normal] 4. How are class schedules prepared and shared?
+[Normal] 5. How are examinations and results managed?
+[Normal] 6. How are student fees and partial payments tracked?
+[Normal] 7. How are unpaid balances or debts identified?
+[Normal] 8. How are teacher salaries calculated?
+[Normal] 9. Is government salary tax currently calculated or recorded?
+[Normal] 10. How are academy income and expenses recorded?
+[Normal] 11. How are reports prepared for management?
+[Normal] 12. How are announcements shared publicly?
+[Normal] 13. How are private student/parent alerts delivered?
+[Normal] 14. Which modules are most important in an integrated system?
+[Normal] 15. Does the academy have sufficient computers for administration?
+[Normal] 16. Does the academy have staff capable of operating the system?
+[Normal] 17. Is mobile access important for teachers/students/parents?
+[Normal] 18. Which languages should the interface support?
+[Normal] 19. Would your academy support or adopt a system such as NAMS?
+[Normal] 20. If not currently ready, what is the main reason?
+[Normal] APPENDIX B: REQUIREMENTS TRACEABILITY MATRIX
+[Normal] Table B.1
+Requirements Traceability Matrix
+[Normal] APPENDIX C: DETAILED SYSTEM TEST REGISTER
+[Normal] Table C.1
+Detailed System Test Register
+[Normal] APPENDIX D: PROTOTYPE SCREENSHOT INSERTION PLAN
+[Normal] Table D.1
+Prototype Screenshot Plan
+[Normal] Each screenshot should be original NAMS evidence. Introduce the figure before it, insert a clear high-resolution image, provide an APA-consistent figure number/title, and interpret what the reader should observe afterward. Avoid screenshots that contain unrelated personal data.
+[Normal] APPENDIX E: APA 7 PRESENTATION CHECKLIST
+[Normal] • Use one consistent Times New Roman 12-point body font if required by the university.
+[Normal] • Use consistent heading levels and numbering throughout Chapters 1–6.
+[Normal] • Number tables and figures in chapter sequence if required by the faculty template.
+[Normal] • Refer to every table and figure in the text before it appears.
+[Normal] • Provide a concise table/figure note when interpretation or source information is necessary.
+[Normal] • Avoid decorative 3D charts and unlabeled axes.
+[Normal] • Use original diagrams or properly licensed/cited material; do not copy Exit 360 diagrams.
+[Normal] • Verify every in-text citation against the final reference list.
+[Normal] • Use hanging indents and APA 7 reference formatting in the merged bibliography.
+[Normal] • Do not invent survey results, UAT scores, tax rates, or testing outcomes.
+[Normal] • Update Table of Contents, List of Figures, and List of Tables after final pagination.
+[Normal] • Remove authoring notes and placeholders before submission.
+[Normal] REFERENCES

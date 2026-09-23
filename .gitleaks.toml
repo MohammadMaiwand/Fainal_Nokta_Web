@@ -1,0 +1,16 @@
+title = "Nokta Academy gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known dev docs and seed examples (not production secrets)"
+paths = [
+  '''(?i)README\.md''',
+  '''(?i)FINAL_TEST_REPORT\.md''',
+  '''(?i)account/''',
+  '''(?i)\.env\.example''',
+  '''(?i)seed\.ts''',
+  '''(?i)accounts\.ts''',
+  '''(?i)STAGING_QA_CHECKLIST\.md'''
+]

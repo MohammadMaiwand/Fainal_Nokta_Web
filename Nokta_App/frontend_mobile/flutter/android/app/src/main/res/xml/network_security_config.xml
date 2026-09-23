@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Production/release: HTTPS only -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- Debug builds may use HTTP for LAN/emulator testing -->
+    <debug-overrides cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -17,6 +17,8 @@ interface SelectProps {
   multiple?: boolean;
   placeholder?: string;
   disabled?: boolean;
+  invalid?: boolean;
+  title?: string;
   onChange: (value: string | string[]) => void;
 }
 
@@ -27,7 +29,7 @@ type DropdownPosition = {
   maxHeight: number;
 };
 
-export function Select({ id, label, value, options, multiple = false, placeholder, disabled = false, onChange }: SelectProps) {
+export function Select({ id, label, value, options, multiple = false, placeholder, disabled = false, invalid = false, title, onChange }: SelectProps) {
   const { t, i18n } = useTranslation();
   const { isDark } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
@@ -126,8 +128,10 @@ export function Select({ id, label, value, options, multiple = false, placeholde
         <div
           ref={dropdownRef}
           role="listbox"
-          className={`fixed z-[2000] overflow-hidden rounded-[1.75rem] border p-2 shadow-[0_24px_80px_rgba(15,23,42,0.38)] backdrop-blur-2xl transition-all duration-200 ${
-            isDark ? 'border-white/12 bg-slate-950/96' : 'border-slate-200/90 bg-white/96'
+          className={`fixed z-[2000] overflow-hidden rounded-[1.75rem] border p-2 shadow-[0_24px_80px_rgba(15,23,42,0.38)] transition-all duration-200 ${
+            isDark
+              ? 'border-white/12 bg-slate-950 backdrop-blur-2xl'
+              : 'border-slate-200 bg-white'
           }`}
           style={{
             top: `${dropdownPosition.top}px`,
@@ -176,21 +180,27 @@ export function Select({ id, label, value, options, multiple = false, placeholde
         <button
           ref={buttonRef}
           type="button"
+          title={title}
           onClick={() => {
             if (disabled) return;
             setIsOpen((current) => !current);
           }}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
+          aria-invalid={invalid || undefined}
           disabled={disabled}
-          className={`w-full rounded-2xl border px-4 py-3 text-sm shadow-[0_12px_40px_rgba(15,23,42,0.22)] backdrop-blur-xl transition duration-200 focus:outline-none focus:ring-2 focus:ring-sky-300/30 ${
-            isDark
-              ? disabled
-                ? 'cursor-not-allowed border-white/10 bg-slate-950/50 text-slate-500'
-                : 'border-white/15 bg-slate-950/80 text-slate-100 hover:border-sky-300/50 hover:bg-slate-900/85 focus:border-sky-400'
-              : disabled
-                ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-                : 'border-slate-300/80 bg-white/95 text-slate-900 hover:border-sky-400 hover:bg-white focus:border-sky-500'
+          className={`w-full rounded-2xl border px-4 py-3 text-sm shadow-[0_12px_40px_rgba(15,23,42,0.22)] backdrop-blur-xl transition duration-200 focus:outline-none focus:ring-2 ${
+            invalid
+              ? isDark
+                ? 'border-rose-400/80 bg-rose-500/10 text-slate-100 focus:border-rose-400 focus:ring-rose-400/30'
+                : 'border-rose-400 bg-rose-50 text-slate-900 focus:border-rose-500 focus:ring-rose-500/25'
+              : isDark
+                ? disabled
+                  ? 'cursor-not-allowed border-white/10 bg-slate-950/50 text-slate-500'
+                  : 'border-white/15 bg-slate-950/80 text-slate-100 hover:border-sky-300/50 hover:bg-slate-900/85 focus:border-sky-400 focus:ring-sky-300/30'
+                : disabled
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                  : 'border-slate-300/80 bg-white/95 text-slate-900 hover:border-sky-400 hover:bg-white focus:border-sky-500 focus:ring-sky-300/30'
           } ${isRtl ? 'text-right' : 'text-left'}`}
           id={id}
         >

@@ -8,7 +8,7 @@ export function AnalyticsPage() {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboardAnalytics'],
-    queryFn: dashboardService.summary
+    queryFn: () => dashboardService.summary()
   });
 
   return (

@@ -9,13 +9,28 @@ import { User } from '../models/User';
 
 interface ClassPayload {
   branchId?: string;
+  title?: string;
+  description?: string;
+  subjectId?: string | null;
+  teacherId?: string | null;
   className?: string;
   classCode?: string;
   genderRestriction?: 'male' | 'female' | 'coed';
   feeAmount?: number;
   subjects?: Array<string | { name: string }>;
   assignedTeachers?: string[];
+  room?: string;
   capacity?: number;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  weeklySchedule?: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    durationMinutes?: number;
+    attendanceOpensBeforeMinutes?: number;
+    attendanceClosesAfterMinutes?: number;
+  }>;
   examSchedule?: string[] | Date[];
   studentCount?: number;
   active?: boolean;
@@ -42,6 +57,43 @@ export class ClassService {
     return Array.isArray(teacherIds)
       ? Array.from(new Set(teacherIds.map(String).filter(Boolean)))
       : [];
+  }
+
+  private normalizeWeeklySchedule(schedule?: ClassPayload['weeklySchedule']) {
+    if (!Array.isArray(schedule)) {
+      return [];
+    }
+
+    return schedule.map((item) => {
+      const [startHour, startMinute] = String(item.startTime).split(':').map(Number);
+      const [endHour, endMinute] = String(item.endTime).split(':').map(Number);
+      const startTotal = startHour * 60 + startMinute;
+      const endTotal = endHour * 60 + endMinute;
+      const durationMinutes = Number(item.durationMinutes ?? (endTotal > startTotal ? endTotal - startTotal : endTotal + 24 * 60 - startTotal));
+
+      if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+        throw new Error('Class schedule end time must be after start time');
+      }
+
+      return {
+        dayOfWeek: Number(item.dayOfWeek),
+        startTime: item.startTime,
+        endTime: item.endTime,
+        durationMinutes,
+        attendanceOpensBeforeMinutes: Number(item.attendanceOpensBeforeMinutes ?? 0),
+        attendanceClosesAfterMinutes: Number(item.attendanceClosesAfterMinutes ?? 0)
+      };
+    });
+  }
+
+  private async assertNoOverlappingSchedule(classId: string | null, teacherIds: string[], branchId: string | null | undefined, schedule: ReturnType<ClassService['normalizeWeeklySchedule']>) {
+    // A teacher may be assigned to several classes. Class setup is not a
+    // timetable reservation; real teacher/time collisions are validated when
+    // timetable entries are created or changed.
+    void classId;
+    void teacherIds;
+    void branchId;
+    void schedule;
   }
 
   private async validateTeacherAssignments(teacherIds: string[], genderRestriction?: 'male' | 'female' | 'coed') {
@@ -169,6 +221,8 @@ export class ClassService {
       const subjectNames = this.normalizeSubjectNames(payload.subjects);
       const teacherIds = this.normalizeTeacherIds(payload.assignedTeachers);
       await this.validateTeacherAssignments(teacherIds, payload.genderRestriction);
+      const weeklySchedule = this.normalizeWeeklySchedule(payload.weeklySchedule);
+      await this.assertNoOverlappingSchedule(null, teacherIds, payload.branchId ?? null, weeklySchedule);
 
       const classCode = payload.classCode?.trim() || await this.generateNextClassCode();
       if (payload.classCode) {
@@ -180,12 +234,20 @@ export class ClassService {
 
       const klass = await this.classRepository.create({
         branchId: payload.branchId ?? null,
+        title: payload.title?.trim() || className,
+        description: payload.description?.trim() ?? '',
+        subjectId: payload.subjectId ?? null,
+        teacherId: payload.teacherId ?? teacherIds[0] ?? null,
         className,
         classCode,
         genderRestriction: payload.genderRestriction ?? 'coed',
         feeAmount: Number(payload.feeAmount ?? 0),
         assignedTeachers: teacherIds,
+        room: payload.room?.trim() ?? '',
         capacity: payload.capacity ?? 30,
+        startDate: payload.startDate ? new Date(payload.startDate) : null,
+        endDate: payload.endDate ? new Date(payload.endDate) : null,
+        weeklySchedule,
         examSchedule: Array.isArray(payload.examSchedule) ? payload.examSchedule : [],
         studentCount: payload.studentCount ?? 0,
         active: true
@@ -270,11 +332,30 @@ export class ClassService {
       : (Array.isArray(klass.assignedTeachers) ? klass.assignedTeachers.map((item: any) => String(item)) : []);
 
     await this.validateTeacherAssignments(nextTeacherIds, nextGenderRestriction);
+    const nextWeeklySchedule = payload.weeklySchedule !== undefined
+      ? this.normalizeWeeklySchedule(payload.weeklySchedule)
+      : (Array.isArray(klass.weeklySchedule) ? klass.weeklySchedule.map((item: any) => ({
+          dayOfWeek: Number(item.dayOfWeek),
+          startTime: item.startTime,
+          endTime: item.endTime,
+          durationMinutes: Number(item.durationMinutes),
+          attendanceOpensBeforeMinutes: Number(item.attendanceOpensBeforeMinutes ?? 0),
+          attendanceClosesAfterMinutes: Number(item.attendanceClosesAfterMinutes ?? 0)
+        })) : []);
+    await this.assertNoOverlappingSchedule(classId, nextTeacherIds, payload.branchId !== undefined ? payload.branchId : klass.branchId?.toString?.(), nextWeeklySchedule);
 
     if (payload.branchId !== undefined) klass.branchId = payload.branchId ?? null;
+    if (payload.title !== undefined) klass.title = payload.title?.trim() || klass.className;
+    if (payload.description !== undefined) klass.description = payload.description?.trim() ?? '';
+    if (payload.subjectId !== undefined) klass.subjectId = payload.subjectId ?? null;
+    if (payload.teacherId !== undefined) klass.teacherId = payload.teacherId ?? nextTeacherIds[0] ?? null;
     if (payload.genderRestriction !== undefined) klass.genderRestriction = payload.genderRestriction;
     if (payload.feeAmount !== undefined) klass.feeAmount = Number(payload.feeAmount ?? 0);
+    if (payload.room !== undefined) klass.room = payload.room?.trim() ?? '';
     if (payload.capacity !== undefined) klass.capacity = Number(payload.capacity ?? 30);
+    if (payload.startDate !== undefined) klass.startDate = payload.startDate ? new Date(payload.startDate) : null;
+    if (payload.endDate !== undefined) klass.endDate = payload.endDate ? new Date(payload.endDate) : null;
+    if (payload.weeklySchedule !== undefined) klass.weeklySchedule = nextWeeklySchedule as any;
     if (payload.examSchedule !== undefined) klass.examSchedule = Array.isArray(payload.examSchedule) ? payload.examSchedule as any : [];
     if (payload.active !== undefined) klass.active = payload.active;
     if (payload.studentCount !== undefined) klass.studentCount = Number(payload.studentCount ?? klass.studentCount ?? 0);

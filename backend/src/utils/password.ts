@@ -1,18 +1,25 @@
 import bcrypt from 'bcryptjs';
+import { config } from '../config/env';
 
-export const PASSWORD_SALT_ROUNDS = 12;
-export const PASSWORD_MIN_LENGTH = 4;
-export const PASSWORD_MAX_LENGTH = 32;
+export const PASSWORD_SALT_ROUNDS = Number(config.bcryptRounds || 12);
+/** Soft upper bound only to avoid absurd payloads — no complexity rules. */
+export const PASSWORD_MAX_LENGTH = 256;
 
 export interface PasswordHistoryEntry {
   hash: string;
   changedAt: Date;
 }
 
+/**
+ * Accept any non-empty password. No length/complexity (upper/lower/digit) rules.
+ */
 export function assertStrongPassword(password: string) {
   const normalizedPassword = String(password ?? '');
-  if (normalizedPassword.length < PASSWORD_MIN_LENGTH || normalizedPassword.length > PASSWORD_MAX_LENGTH) {
-    throw new Error(`Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters.`);
+  if (!normalizedPassword.trim()) {
+    throw new Error('Password is required.');
+  }
+  if (normalizedPassword.length > PASSWORD_MAX_LENGTH) {
+    throw new Error(`Password must be at most ${PASSWORD_MAX_LENGTH} characters.`);
   }
 }
 

@@ -6,6 +6,8 @@ import { createError, createResponse } from '../../helpers/response';
 import { Branch } from '../../models/Branch';
 import { Owner } from '../../models/Owner';
 import { User } from '../../models/User';
+import { afghanPhoneField } from '../../validators/fieldSchemas';
+import { listRecordFilter } from '../../utils/recordVisibility';
 
 const router = Router();
 const idParamSchema = Joi.object({
@@ -21,7 +23,7 @@ const branchSchema = Joi.object({
     address: Joi.string().optional(),
     city: Joi.string().optional(),
     country: Joi.string().optional(),
-    phone: Joi.string().optional(),
+    phone: afghanPhoneField(false),
     email: Joi.string().email().optional(),
     ownerId: Joi.string().hex().length(24).optional(),
     managerId: Joi.string().hex().length(24).optional()
@@ -34,7 +36,7 @@ const branchUpdateSchema = Joi.object({
     address: Joi.string().optional(),
     city: Joi.string().optional(),
     country: Joi.string().optional(),
-    phone: Joi.string().optional(),
+    phone: afghanPhoneField(false),
     email: Joi.string().email().optional(),
     ownerId: Joi.string().hex().length(24).optional(),
     managerId: Joi.string().hex().length(24).optional(),
@@ -44,7 +46,22 @@ const branchUpdateSchema = Joi.object({
 
 router.use(authenticate);
 
-router.get('/manager-options', authorize(['super_admin', 'admin', 'owner', 'branch_manager']), async (_req, res, next) => {
+function assertBranchManagerOwnsBranch(req: any, branch: { _id?: { toString?: () => string } } | null) {
+  const role = String(req.user?.canonicalRole ?? req.user?.role ?? '');
+  if (role !== 'branch_manager') {
+    return null;
+  }
+
+  const userBranchId = req.user?.branchId?.toString?.() ?? null;
+  const targetBranchId = branch?._id?.toString?.() ?? req.params?.id?.toString?.() ?? null;
+  if (!userBranchId || !targetBranchId || userBranchId !== targetBranchId) {
+    return createError('Branch access denied');
+  }
+
+  return null;
+}
+
+router.get('/manager-options', authorize(['super_admin', 'owner', 'branch_manager']), async (_req, res, next) => {
   try {
     const managers = await User.find({
       role: { $in: ['branch_manager', 'admin', 'super_admin'] },
@@ -61,9 +78,15 @@ router.get('/manager-options', authorize(['super_admin', 'admin', 'owner', 'bran
   }
 });
 
-router.get('/', authorize(['super_admin', 'admin', 'owner', 'branch_manager']), async (_req, res, next) => {
+router.get('/', authorize(['super_admin', 'owner', 'branch_manager']), async (req, res, next) => {
   try {
-    const branches = await Branch.find({ isDeleted: false })
+    const role = String(req.user?.canonicalRole ?? req.user?.role ?? '');
+    const filter: Record<string, unknown> = { ...listRecordFilter(req.user) };
+    if (role === 'branch_manager' && req.user?.branchId) {
+      filter._id = req.user.branchId;
+    }
+
+    const branches = await Branch.find(filter)
       .populate('managerId', 'name email phone')
       .populate({
         path: 'ownerId',
@@ -88,7 +111,7 @@ router.get('/', authorize(['super_admin', 'admin', 'owner', 'branch_manager']), 
   }
 });
 
-router.post('/', authorize(['super_admin', 'admin', 'owner']), validate(branchSchema), async (req, res, next) => {
+router.post('/', authorize(['super_admin']), validate(branchSchema), async (req, res, next) => {
   try {
     if (req.body.ownerId) {
       const owner = await Owner.findOne({ _id: req.body.ownerId, isDeleted: false }).lean();
@@ -118,6 +141,16 @@ router.post('/', authorize(['super_admin', 'admin', 'owner']), validate(branchSc
 
 const updateBranchHandler = async (req: any, res: any, next: any) => {
   try {
+    const existingBranch = await Branch.findById(req.params.id).select('_id').lean<any>();
+    if (!existingBranch) {
+      return res.status(404).json(createError('Branch not found'));
+    }
+
+    const branchScopeError = assertBranchManagerOwnsBranch(req, existingBranch);
+    if (branchScopeError) {
+      return res.status(403).json(branchScopeError);
+    }
+
     if (req.body.ownerId) {
       const owner = await Owner.findOne({ _id: req.body.ownerId, isDeleted: false }).lean();
       if (!owner) {
@@ -164,11 +197,21 @@ const updateBranchHandler = async (req: any, res: any, next: any) => {
   }
 };
 
-router.patch('/:id', authorize(['super_admin', 'admin', 'owner', 'branch_manager']), validate(branchUpdateSchema), updateBranchHandler);
-router.put('/:id', authorize(['super_admin', 'admin', 'owner', 'branch_manager']), validate(branchUpdateSchema), updateBranchHandler);
+router.patch('/:id', authorize(['super_admin', 'branch_manager']), validate(branchUpdateSchema), updateBranchHandler);
+router.put('/:id', authorize(['super_admin', 'branch_manager']), validate(branchUpdateSchema), updateBranchHandler);
 
-router.post('/:id/request-delete', authorize(['super_admin', 'admin', 'branch_manager']), validate(idParamSchema), async (req, res, next) => {
+router.post('/:id/request-delete', authorize(['super_admin', 'owner', 'branch_manager']), validate(idParamSchema), async (req, res, next) => {
   try {
+    const existingBranch = await Branch.findById(req.params.id).select('_id').lean<any>();
+    if (!existingBranch) {
+      return res.status(404).json(createError('Branch not found'));
+    }
+
+    const branchScopeError = assertBranchManagerOwnsBranch(req, existingBranch);
+    if (branchScopeError) {
+      return res.status(403).json(branchScopeError);
+    }
+
     const branch = await Branch.findByIdAndUpdate(
       req.params.id,
       {
@@ -188,7 +231,7 @@ router.post('/:id/request-delete', authorize(['super_admin', 'admin', 'branch_ma
   }
 });
 
-router.post('/:id/approve-delete', authorize(['super_admin', 'owner']), validate(idParamSchema), async (req, res, next) => {
+router.post('/:id/approve-delete', authorize(['super_admin']), validate(idParamSchema), async (req, res, next) => {
   try {
     const branch = await Branch.findByIdAndUpdate(
       req.params.id,

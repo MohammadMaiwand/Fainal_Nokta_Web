@@ -123,6 +123,7 @@ router.post('/', validate(createRoleSchema), async (req, res, next) => {
       await Role.create(payload);
     }
 
+    roleProfileService.clearRolePermissionCache(slug);
     res.status(201).json(createResponse(await buildRoleSummary(slug), 'Role customization created successfully'));
   } catch (error) {
     next(error);
@@ -150,6 +151,7 @@ router.put('/:slug', validate(updateRoleSchema), async (req, res, next) => {
 
     await roleDoc.save();
 
+    roleProfileService.clearRolePermissionCache(slug);
     res.json(createResponse(await buildRoleSummary(slug as typeof enterpriseRoles[number]), 'Role customization updated successfully'));
   } catch (error) {
     next(error);
@@ -171,6 +173,7 @@ router.delete('/:slug', async (req, res, next) => {
     roleDoc.set('isDeleted', true);
     await roleDoc.save();
 
+    roleProfileService.clearRolePermissionCache(slug);
     res.json(createResponse(await buildRoleSummary(slug as typeof enterpriseRoles[number]), 'Role customization removed. Default permissions restored.'));
   } catch (error) {
     next(error);

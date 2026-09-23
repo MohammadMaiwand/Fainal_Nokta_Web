@@ -1,0 +1,54 @@
+[Heading 1] ABSTRACT
+[Heading 1] TABLE OF CONTENTS
+[Heading 1] LIST OF FIGURES
+[Heading 1] LIST OF TABLES
+[Heading 1] LIST OF ABBREVIATIONS
+[Heading 1] CHAPTER 1: INTRODUCTION
+[Heading 2] 1.1 Background
+[Heading 2] 1.2 Problem Statement
+[Heading 2] 1.3 Objectives
+[Heading 3] 1.3.1 General Objective
+[Heading 3] 1.3.2 Specific Objectives
+[Heading 2] 1.4 Scope and Limitations
+[Heading 3] 1.4.1 Scope (Inclusions)
+[Heading 3] 1.4.2 Limitations (Exclusions)
+[Heading 2] 1.5 Significance of the Project
+[Heading 2] 1.6 Organization of the Report
+[Normal] Chapter 1 introduces the background, problem, objectives, scope, limitations, and significance. Chapter 2 reviews concepts, existing systems, recent technologies, and research gaps. Chapter 3 presents requirements analysis, including elicitation methodology, functional requirements, non-functional requirements, use cases, and data requirements. Chapter 4 explains system design, including methodology, architecture, database design, UI/UX, algorithm design, security, and testing strategy. Chapter 5 presents results and discussion. Chapter 6 concludes the report and provides recommendations. Appendices contain technical artifacts, references, citation map, and code-related summaries.
+[Heading 1] CHAPTER 2: LITERATURE REVIEW
+[Heading 2] 2.1 Concepts and Definitions
+[Heading 2] 2.2 Related Work/Existing Systems
+[Heading 2] 2.3 Recent Trends and Technologies
+[Heading 2] 2.4 Research Gap Synthesis
+[Heading 2] 2.5 Copyright and Plagiarism Considerations in Literature Use
+[Heading 2] 2.6 Learning Analytics and the AI Direction of the Proposal
+[Heading 2] 2.7 Financial Transparency and Educational Administration
+[Heading 2] 2.8 Security, Privacy, and Role-Based Access Control
+[Heading 2] 2.9 User Acceptance, UX, and Local Adoption
+[Heading 2] 2.10 Chapter Summary
+[Heading 1] CHAPTER 3: REQUIREMENTS ANALYSIS
+[Heading 2] 3.1 Requirements Elicitation Methodology
+[Heading 2] 3.2 Functional Requirements
+[Heading 2] 3.3 Non-Functional Requirements
+[Heading 2] 3.4 Use Case Model
+[Heading 2] 3.5 Data Requirements
+[Heading 2] 3.6 Research Methodology: Why Mixed-Methods Was Used
+[Heading 2] 3.7 Design Methodology: Why Hybrid Agile-SDLC Was Used
+[Heading 2] 3.8 Requirements Traceability to Research Questions
+[Heading 2] 3.9 Requirement Validation and Prioritization
+[Heading 2] 3.10 Ethical and Data Protection Requirements
+[Heading 1] CHAPTER 4: SYSTEM DESIGN
+[Heading 2] 4.1 Design Methodology
+[Heading 2] 4.2 Architectural Design
+[Heading 2] 4.3 Database Design
+[Heading 2] 4.4 Class Diagram
+[Heading 2] 4.5 Detailed Design
+[Heading 3] 4.5.1 UI/UX Design
+[Heading 3] 4.5.2 Algorithm Design
+[Heading 2] 4.6 Security Design
+[Heading 2] 4.7 Testing Strategy
+[Heading 1] CHAPTER 5: RESULTS AND DISCUSSION
+[Heading 1] CHAPTER 6: CONCLUSION AND RECOMMENDATIONS
+[Heading 1] APPENDIX A: TECHNICAL ARTIFACTS
+[Heading 1] REFERENCES
+[Heading 1] APPENDIX B: APA / MENDELEY CITATION MAP

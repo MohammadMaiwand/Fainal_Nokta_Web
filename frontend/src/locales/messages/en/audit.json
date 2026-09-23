@@ -2,5 +2,14 @@
   "actor": "Actor",
   "action": "Action",
   "target": "Target",
-  "created_at": "Date"
+  "created_at": "Date",
+  "severity_info": "Info",
+  "severity_warning": "Warning",
+  "severity_critical": "Critical",
+  "type_authentication": "Authentication",
+  "type_finance": "Finance",
+  "type_attendance": "Attendance",
+  "type_rbac": "Permissions",
+  "type_reporting": "Reporting",
+  "type_system": "System"
 }

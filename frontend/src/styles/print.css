@@ -1,0 +1,684 @@
+﻿/* Global A4 print system â€” screen UI must not inherit fixed A4 width. */
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide application shell and interactive chrome */
+  [data-no-print],
+  .no-print,
+  .app-sidebar,
+  .sidebar-shell,
+  .app-header,
+  .app-navbar,
+  .app-footer,
+  .mobile-navigation,
+  .page-actions,
+  .filter-toolbar,
+  .search-toolbar,
+  .toast-container,
+  .tooltip,
+  .floating-action-button {
+    display: none !important;
+  }
+
+  /* Selected-content print mode: hide page, show only print portal */
+  html.printing-selected-content body > *:not(#nokta-print-portal) {
+    display: none !important;
+  }
+
+  html.printing-selected-content #nokta-print-portal,
+  html.printing-selected-content #nokta-print-portal * {
+    visibility: visible !important;
+  }
+
+  #nokta-print-portal,
+  .print-portal-sheet,
+  [data-print-portal],
+  [data-print-active],
+  [data-print-root],
+  .printable-section {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Unclip scroll wrappers so full tables print across pages */
+  #nokta-print-portal .overflow-x-auto,
+  #nokta-print-portal .overflow-y-auto,
+  #nokta-print-portal .overflow-auto,
+  #nokta-print-portal .overflow-hidden,
+  #nokta-print-portal .table-shell,
+  [data-print-active] .overflow-x-auto,
+  [data-print-active] .overflow-y-auto,
+  [data-print-active] .overflow-auto,
+  [data-print-active] .overflow-hidden,
+  [data-print-active] .table-shell {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  .print-table,
+  table.print-table,
+  #nokta-print-portal table,
+  [data-print-active] table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed;
+    font-size: 9pt;
+    page-break-inside: auto;
+  }
+
+  .print-table th,
+  .print-table td,
+  #nokta-print-portal table th,
+  #nokta-print-portal table td,
+  [data-print-active] table th,
+  [data-print-active] table td {
+    border: 1px solid #444 !important;
+    padding: 3px 5px !important;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .print-table thead,
+  #nokta-print-portal table thead,
+  [data-print-active] table thead {
+    display: table-header-group;
+  }
+
+  .print-table tfoot,
+  #nokta-print-portal table tfoot,
+  [data-print-active] table tfoot {
+    display: table-footer-group;
+  }
+
+  .print-table tr,
+  #nokta-print-portal table tr,
+  [data-print-active] table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-page-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-page-break-after {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-report-header,
+  .print-summary-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-print-active] .truncate,
+  #nokta-print-portal .truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  .timetable-print-sheet {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Charts are screen-only â€” data tables are the printable source of truth */
+  .recharts-wrapper,
+  .recharts-responsive-container,
+  [data-print-hide-charts] .recharts-wrapper {
+    display: none !important;
+  }
+}
+
+/* Keep dedicated print sources off the interactive layout */
+@media screen {
+  .print-report-source {
+    position: absolute !important;
+    left: -10000px !important;
+    top: 0 !important;
+    width: 210mm;
+    max-width: 210mm;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Keep portal off-screen until print starts */
+#nokta-print-portal {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 210mm;
+  background: #fff;
+  color: #000;
+  z-index: -1;
+}
+
+html.print-orientation-landscape #nokta-print-portal {
+  width: 297mm;
+}
+
+@media print {
+  #nokta-print-portal {
+    position: static !important;
+    left: auto !important;
+    width: 100% !important;
+    z-index: auto !important;
+  }
+
+  #nokta-print-portal,
+  #nokta-print-portal *,
+  .attendance-hard-sheet,
+  .attendance-hard-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .attendance-hard-sheet {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .attendance-month-grid {
+    font-size: 9pt !important;
+    width: 100% !important;
+  }
+
+  .attendance-sheet-title {
+    font-size: 13pt !important;
+  }
+
+  .attendance-sheet-meta,
+  .attendance-print-date {
+    font-size: 10pt !important;
+  }
+
+  .attendance-identity-title {
+    font-size: 11pt !important;
+  }
+
+  .attendance-head-label,
+  .attendance-name-text {
+    font-size: 10pt !important;
+  }
+
+  .attendance-body-text {
+    font-size: 9pt !important;
+  }
+
+  .attendance-row-number {
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  .attendance-month-grid th,
+  .attendance-month-grid td {
+    border: 1px solid #000 !important;
+  }
+
+  .attendance-day-head,
+  .attendance-day-cell {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .attendance-day-head {
+    height: 4rem !important;
+  }
+
+  .attendance-day-label {
+    font-size: 8.5pt !important;
+  }
+}
+
+/* Monthly hard-copy attendance grid (Excel template style) */
+.attendance-hard-sheet {
+  font-family: Tahoma, 'Segoe UI', Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+
+.attendance-print-date {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #111;
+}
+
+.attendance-sheet-header p {
+  margin: 0;
+}
+
+.attendance-sheet-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.attendance-handwrite-field {
+  display: inline-block;
+  width: 130px;
+  height: 1.15em;
+  vertical-align: baseline;
+  border-bottom: 1px solid #000;
+}
+
+.attendance-sheet-meta {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.attendance-month-grid {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11px;
+}
+
+.attendance-month-grid th,
+.attendance-month-grid td {
+  border: 1px solid #000;
+  color: #000;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+
+@media screen {
+  .attendance-hard-sheet {
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+
+  .attendance-month-grid th,
+  .attendance-month-grid td {
+    border-color: #94a3b8 !important;
+    background: #fff;
+  }
+
+  .attendance-month-grid .attendance-identity-title,
+  .attendance-month-grid .attendance-head-label {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+  }
+}
+
+.attendance-cell-center {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 3px 4px !important;
+}
+
+.attendance-identity-title {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.attendance-head-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.attendance-phone-heading {
+  display: inline-block;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.attendance-name-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.attendance-body-text {
+  font-size: 10px;
+}
+
+.attendance-row-number {
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.attendance-col-num {
+  width: 2.1rem;
+}
+
+.attendance-row-head {
+  padding: 1px 0 !important;
+}
+
+.attendance-row-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.attendance-col-name,
+.attendance-col-father {
+  width: 5.2rem;
+}
+
+.attendance-col-reg {
+  width: 5.4rem;
+}
+
+.attendance-col-phone {
+  width: 5.2rem;
+}
+
+.attendance-col-day {
+  width: auto;
+}
+
+.attendance-day-head,
+.attendance-day-cell {
+  padding: 1px 0 !important;
+  overflow: hidden;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+.attendance-day-head {
+  height: 4.6rem;
+  vertical-align: middle !important;
+}
+
+.attendance-day-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+}
+
+/* Compact report header applies to both browser preview and PDF export capture. */
+.academy-financial-header-grid {
+  display: grid;
+  grid-template-columns: 190px minmax(150px, 1fr) minmax(170px, auto);
+  grid-template-areas: "serial meta title";
+  align-items: center;
+  gap: 8px;
+  direction: ltr;
+}
+
+.academy-financial-header-title {
+  grid-area: title;
+  justify-self: start;
+  direction: rtl;
+}
+
+.academy-financial-print-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.academy-financial-header-serial {
+  grid-area: serial;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  direction: ltr;
+  transform: translateX(8mm);
+}
+
+.academy-financial-serial-text {
+  margin: 0;
+  white-space: nowrap;
+  direction: ltr;
+  font-weight: 700;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.academy-financial-serial-text p {
+  margin: 0;
+}
+
+.academy-financial-header-meta {
+  grid-area: meta;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+  direction: rtl;
+  overflow: visible;
+}
+
+.academy-linear-barcode {
+  width: 170px;
+  height: 38px;
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+/* Academy financial report: retain semantic row colors in browser print/PDF. */
+@media print {
+  #nokta-print-portal .academy-financial-print-sheet,
+  #nokta-print-portal .academy-financial-print-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  #nokta-print-portal .academy-financial-print-header,
+  #nokta-print-portal .academy-financial-print-page-two {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .academy-financial-print-header {
+    padding: 3px 6px !important;
+    margin: 0 0 4px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    min-height: 20mm !important;
+    max-height: 20mm !important;
+    overflow: hidden !important;
+  }
+
+  .academy-financial-header-grid {
+    display: grid !important;
+    grid-template-columns: 190px minmax(150px, 1fr) minmax(170px, auto);
+    grid-template-areas: "serial meta title";
+    align-items: center !important;
+    gap: 8px !important;
+    height: 18mm !important;
+    direction: ltr;
+  }
+
+  .academy-financial-header-title {
+    justify-self: start;
+  }
+
+  .academy-financial-header-title img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .academy-financial-print-logo {
+    width: 24px !important;
+    height: 24px !important;
+    flex-basis: 24px !important;
+    background: #0f172a !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .academy-financial-header-title h1 {
+    font-size: 11pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .academy-financial-header-title p,
+  .academy-financial-header-serial,
+  .academy-financial-header-meta {
+    font-size: 7pt !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+  }
+
+  .academy-financial-header-serial {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    direction: ltr;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    transform: translateX(8mm);
+  }
+
+  .academy-financial-header-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+  }
+
+  .academy-financial-print-sheet .worksheet-print-shell {
+    padding: 4px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    min-height: 238mm;
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  .academy-financial-print-sheet .worksheet-print-shell h2 {
+    margin: 0 0 4px !important;
+    font-size: 11pt !important;
+  }
+
+  .academy-financial-print-sheet .print-table {
+    font-size: 14px !important;
+  }
+
+  .academy-financial-print-sheet .print-table th,
+  .academy-financial-print-sheet .print-table td {
+    padding: 3px 5px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  .academy-financial-page-one-footer {
+    margin-top: auto !important;
+  }
+
+  .academy-linear-barcode {
+    width: 170px !important;
+    height: 38px !important;
+    background: #fff !important;
+    flex: 0 0 auto;
+  }
+
+  .academy-financial-print-page-two .academy-linear-barcode {
+    width: 135px !important;
+    height: 30px !important;
+  }
+
+  .academy-financial-print-page-two {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  #nokta-print-portal [data-financial-tone='total_revenue'] td {
+    background: #dbeafe !important;
+  }
+
+  #nokta-print-portal [data-financial-tone='small_taxes'] td {
+    background: #fef3c7 !important;
+  }
+
+  #nokta-print-portal [data-financial-tone='total_expenses'] td,
+  #nokta-print-portal [data-financial-tone='total_deductions'] td,
+  #nokta-print-portal [data-financial-tone='other_expenses'] td {
+    background: #fee2e2 !important;
+  }
+
+  #nokta-print-portal [data-financial-tone='accrued_salaries'] td,
+  #nokta-print-portal [data-financial-tone='paid_salaries'] td,
+  #nokta-print-portal [data-financial-tone='pending_salaries'] td {
+    background: #ede9fe !important;
+  }
+
+  #nokta-print-portal [data-financial-tone='net_profit'] td {
+    background: #dcfce7 !important;
+  }
+
+
+  #nokta-print-portal .academy-financial-print-chart,
+  #nokta-print-portal .academy-financial-print-chart * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+

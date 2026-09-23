@@ -1,5 +1,5 @@
 @layer components {
   .main-content {
-    min-height: calc(100vh - 5rem);
+    min-height: 0;
   }
 }

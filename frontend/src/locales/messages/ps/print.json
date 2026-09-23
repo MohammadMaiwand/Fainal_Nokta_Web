@@ -1,0 +1,13 @@
+{
+  "preparing": "چاپ چمتو کېږي…",
+  "preparing_export": "د صادرات چمتو کېږي…",
+  "export_failed": "صادرات ناکام شو. بیا هڅه وکړئ.",
+  "no_data": "د چاپ لپاره معلومات نشته.",
+  "printed_at": "د چاپ وخت",
+  "printed_by": "چاپ کوونکی",
+  "page_of": "پاڼه",
+  "period": "موده",
+  "filter_summary": "فلټرونه",
+  "reference": "مراجع",
+  "select_class_first": "مهرباني وکړئ مخکې له چاپ څخه ټولګی وټاکئ."
+}

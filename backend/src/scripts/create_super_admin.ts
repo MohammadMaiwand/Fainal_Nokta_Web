@@ -5,17 +5,22 @@ import { User } from '../models/User';
 
 async function createSuperAdmin() {
   console.log('Creating super admin...');
-  const hashedPassword = await bcrypt.hash('12345678', 10);
+  const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@example.com';
+  const adminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 8) {
+    throw new Error('SUPER_ADMIN_PASSWORD must be set and at least 8 characters.');
+  }
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
   const superAdmin = await User.create({
     name: 'Super Admin',
-    email: 'admin@gmail.com',
+    email: adminEmail,
     phone: '0780000000',
     password: hashedPassword,
     role: 'super_admin'
   });
   console.log('Super admin created successfully!');
-  console.log('Email: admin@gmail.com');
-  console.log('Password: 12345678');
+  console.log(`Email: ${adminEmail}`);
+  console.log('Password: [provided via SUPER_ADMIN_PASSWORD]');
   return superAdmin;
 }
 

@@ -9,17 +9,17 @@ import {
   CalendarDays,
   CalendarCheck,
   ClipboardList,
-  CreditCard,
-  DollarSign,
   FileText,
   GraduationCap,
   Home,
+  MessageSquare,
   Layers,
-  Receipt,
   ShieldCheck,
   UserCheck,
-  Users
+  Users,
+  Wallet
 } from 'lucide-react';
+import { AfghaniIcon } from '@/components/icons/AfghaniIcon';
 
 export type EnterpriseRole =
   | 'super_admin'
@@ -50,11 +50,31 @@ export function normalizeRole(role: Role | null | undefined): EnterpriseRole | n
 }
 
 const coreRoles: EnterpriseRole[] = ['super_admin', 'admin', 'teacher', 'student', 'parent', 'owner', 'branch_manager', 'system_automation'];
+const roleDeniedPaths: Partial<Record<EnterpriseRole, Set<string>>> = {
+  // Hard blocks only for modules never intended for family portal (even with grants).
+  parent: new Set(['/courses', '/books', '/curriculum', '/exams']),
+  teacher: new Set([
+    '/teachers',
+    '/families',
+    '/payments',
+    '/finance',
+    '/loans',
+    '/expenses',
+    '/reports',
+    '/users',
+    '/audit',
+    '/roles',
+    '/branches',
+    '/academy-financial-report',
+    '/enterprise',
+    '/academic-standards'
+  ])
+};
 
 export interface ModuleField {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'select' | 'textarea' | 'subjectList' | 'file';
+  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'time' | 'select' | 'textarea' | 'subjectList' | 'classSchedule' | 'file' | 'profileImage';
   required?: boolean;
   options?: { value: string; label: string }[];
   optionsEndpoint?: string;
@@ -140,9 +160,9 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     searchField: 'name',
     permissions: {
-      view: ['super_admin', 'admin', 'owner', 'branch_manager'],
-      create: ['super_admin', 'admin', 'owner'],
-      edit: ['super_admin', 'admin', 'owner', 'branch_manager'],
+      view: ['super_admin', 'owner', 'branch_manager'],
+      create: ['super_admin'],
+      edit: ['super_admin', 'branch_manager'],
       delete: ['super_admin']
     }
   },
@@ -155,12 +175,21 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'name', label: 'common.full_name', type: 'text', required: true },
       { name: 'email', label: 'common.email_address', type: 'email', required: true },
       { name: 'password', label: 'common.password', type: 'password', required: true, hiddenOnEdit: true },
-      { name: 'profileImage', label: 'common.profile_image', type: 'text' },
+      { name: 'phone', label: 'common.phone', type: 'text' },
+      { name: 'profileImage', label: 'common.profile_image', type: 'profileImage' },
+      { name: 'branchId', label: 'common.branch', type: 'select', required: true, optionsEndpoint: '/branches', optionLabelKey: 'name', optionValueKey: '_id' },
+      { name: 'status', label: 'common.status', type: 'select', options: [
+        { value: 'active', label: 'common.active' },
+        { value: 'inactive', label: 'common.inactive' },
+        { value: 'blocked', label: 'common.blocked' }
+      ] },
       { name: 'role', label: 'common.role', type: 'select', required: true, options: roleOptions }
     ],
     listFields: [
       { key: 'name', label: 'common.name', width: '35%' },
       { key: 'email', label: 'common.email', width: '35%' },
+      { key: 'phone', label: 'common.phone' },
+      { key: 'branchName', label: 'common.branch' },
       { key: 'role', label: 'common.role', width: '30%' }
     ],
     searchField: 'name',
@@ -182,8 +211,10 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'fatherName', label: 'students.father_name', type: 'text', required: true },
       { name: 'loginEmail', label: 'common.login_email', type: 'email' },
       { name: 'loginPassword', label: 'common.login_password', type: 'password', hiddenOnEdit: true },
-      { name: 'profileImage', label: 'common.profile_image', type: 'text' },
-      { name: 'familyPhone', label: 'students.guardian_phone', type: 'text', required: true },
+      { name: 'profileImage', label: 'common.profile_image', type: 'profileImage' },
+      { name: 'phone', label: 'students.phone', type: 'text' },
+      { name: 'familyPhone', label: 'students.guardian_phone', type: 'text' },
+      { name: 'whatsapp', label: 'common.whatsapp', type: 'text' },
       { name: 'gender', label: 'students.gender', type: 'select', required: true, options: [
         { value: 'male', label: 'students.gender_male' },
         { value: 'female', label: 'students.gender_female' },
@@ -194,24 +225,35 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'teacherId', label: 'students.teacher', type: 'select', required: true, optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' },
       { name: 'feeAmount', label: 'students.fee_amount', type: 'number', required: true },
       { name: 'paidAmount', label: 'students.paid_amount', type: 'number' },
-      { name: 'registrationExpiryDate', label: 'common.date', type: 'date' },
+      { name: 'registrationStartDate', label: 'common.start_date', type: 'date' },
+      { name: 'registrationEndDate', label: 'common.end_date', type: 'date' },
       { name: 'status', label: 'common.status', type: 'select', options: [
         { value: 'active', label: 'common.active' },
         { value: 'inactive', label: 'Inactive' },
         { value: 'suspended', label: 'Suspended' },
         { value: 'graduated', label: 'Graduated' }
+      ] },
+      { name: 'accountStatus', label: 'common.account_status', type: 'select', options: [
+        { value: 'active', label: 'common.active' },
+        { value: 'warning', label: 'common.warning' },
+        { value: 'expired', label: 'common.expired' },
+        { value: 'blocked', label: 'common.blocked' }
       ] }
     ],
     listFields: [
-      { key: 'firstName', label: 'students.first_name' },
-      { key: 'lastName', label: 'students.last_name' },
-      { key: 'gender', label: 'students.gender' },
-      { key: 'className', label: 'students.class_name' },
-      { key: 'teacherName', label: 'students.teacher_name' }
+      { key: 'studentNumber', label: 'students.roll_no' },
+      { key: 'fullName', label: 'common.full_name' },
+      { key: 'className', label: 'students.class' },
+      { key: 'subjectName', label: 'students.subject' },
+      { key: 'teacherName', label: 'students.teacher' },
+      { key: 'guardianPhone', label: 'students.guardian_phone' },
+      { key: 'studentPhone', label: 'students.phone' },
+      { key: 'branchName', label: 'common.branch' },
+      { key: 'enrollmentStatus', label: 'common.status' }
     ],
     searchField: 'firstName',
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager', 'teacher'],
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent'],
       create: ['super_admin', 'admin', 'branch_manager'],
       edit: ['super_admin', 'admin', 'branch_manager'],
       delete: ['super_admin', 'admin']
@@ -226,7 +268,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'name', label: 'common.full_name', type: 'text', required: true },
       { name: 'email', label: 'common.email', type: 'email', required: true },
       { name: 'password', label: 'common.password', type: 'password', required: true, hiddenOnEdit: true },
-      { name: 'profileImage', label: 'common.profile_image', type: 'text' },
+      { name: 'profileImage', label: 'common.profile_image', type: 'profileImage' },
       { name: 'phone', label: 'students.phone', type: 'text', required: true },
       { name: 'whatsapp', label: 'common.whatsapp', type: 'text' },
       { name: 'address', label: 'common.address', type: 'textarea' },
@@ -237,7 +279,8 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       ] },
       { name: 'salaryType', label: 'students.salary_type', type: 'select', required: true, options: [
         { value: 'fixed', label: 'students.fixed' },
-        { value: 'percentage', label: 'students.percentage' }
+        { value: 'percentage', label: 'students.percentage' },
+        { value: 'fixed_plus_percentage', label: 'students.fixed_plus_percentage' }
       ] },
       { name: 'salaryValue', label: 'students.salary_value', type: 'number', required: true },
       { name: 'assignedSubjects', label: 'common.subjects', type: 'select', multiple: true, optionsEndpoint: '/subjects', optionLabelKey: 'title', optionValueKey: '_id' },
@@ -252,11 +295,14 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { key: 'name', label: 'common.name' },
       { key: 'email', label: 'common.email' },
       { key: 'phone', label: 'students.phone' },
+      { key: 'assignedClassNames', label: 'common.classes' },
+      { key: 'assignedSubjectNames', label: 'common.subjects' },
+      { key: 'branchName', label: 'common.branch' },
       { key: 'gender', label: 'students.gender' }
     ],
     searchField: 'name',
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager'],
+      view: ['super_admin', 'admin', 'branch_manager', 'student', 'parent'],
       create: ['super_admin', 'admin', 'branch_manager'],
       edit: ['super_admin', 'admin', 'branch_manager'],
       delete: ['super_admin', 'admin']
@@ -269,6 +315,18 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     endpoint: '/classes',
     fields: [
       { name: 'className', label: 'classes.class_name', type: 'text', required: true },
+      { name: 'title', label: 'common.title', type: 'text' },
+      { name: 'description', label: 'common.description', type: 'textarea' },
+      { name: 'category', label: 'common.category', type: 'text' },
+      { name: 'imageUrl', label: 'common.image', type: 'file' },
+      { name: 'registrationOpen', label: 'common.registration_open', type: 'select', options: [
+        { value: 'true', label: 'common.open' },
+        { value: 'false', label: 'common.closed' }
+      ] },
+      { name: 'active', label: 'common.active', type: 'select', options: [
+        { value: 'true', label: 'common.active' },
+        { value: 'false', label: 'common.inactive' }
+      ] },
       { name: 'genderRestriction', label: 'classes.gender_restriction', type: 'select', required: true, options: [
         { value: 'coed', label: 'classes.gender_coed' },
         { value: 'male', label: 'students.gender_male' },
@@ -276,8 +334,12 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       ] },
       { name: 'feeAmount', label: 'students.fee_amount', type: 'number', required: true },
       { name: 'subjects', label: 'classes.subjects', type: 'subjectList', required: true, placeholder: 'classes.subject_names' },
-      { name: 'assignedTeachers', label: 'classes.assigned_teachers', type: 'select', multiple: true, required: true, optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id', placeholder: 'classes.choose_teacher' },
-      { name: 'capacity', label: 'classes.capacity', type: 'number' }
+      { name: 'assignedTeachers', label: 'classes.assigned_teachers', type: 'select', multiple: true, optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id', placeholder: 'classes.choose_teacher' },
+      { name: 'room', label: 'common.room', type: 'text' },
+      { name: 'capacity', label: 'classes.capacity', type: 'number' },
+      { name: 'startDate', label: 'common.start_date', type: 'date' },
+      { name: 'endDate', label: 'common.end_date', type: 'date' },
+      { name: 'weeklySchedule', label: 'common.schedule', type: 'classSchedule' }
     ],
     listFields: [
       { key: 'className', label: 'classes.class_name' },
@@ -302,7 +364,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     description: 'common.timetable_description',
     fields: [
       { name: 'classId', label: 'students.class', type: 'select', required: true, optionsEndpoint: '/classes', optionLabelKey: 'className', optionValueKey: '_id' },
-      { name: 'subjectId', label: 'common.subject', type: 'select', optionsEndpoint: '/subjects', optionLabelKey: 'title', optionValueKey: '_id' },
+      { name: 'subjectId', label: 'common.subject', type: 'select', required: true, optionsEndpoint: '/subjects', optionLabelKey: 'title', optionValueKey: '_id' },
       { name: 'teacherId', label: 'common.teacher', type: 'select', required: true, optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' },
       { name: 'dayOfWeek', label: 'common.day_of_week', type: 'select', required: true, options: [
         { value: 'saturday', label: 'common.saturday' },
@@ -335,9 +397,9 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     searchField: 'room',
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner'],
-      create: ['super_admin', 'admin', 'branch_manager', 'teacher'],
-      edit: ['super_admin', 'admin', 'branch_manager', 'teacher'],
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'owner'],
+      create: ['super_admin', 'admin', 'branch_manager'],
+      edit: ['super_admin', 'admin', 'branch_manager'],
       delete: ['super_admin', 'admin', 'branch_manager']
     }
   },
@@ -351,7 +413,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'code', label: 'subjects.code', type: 'text', required: true },
       { name: 'classId', label: 'subjects.class', type: 'select', required: true, optionsEndpoint: '/classes', optionLabelKey: 'className', optionValueKey: '_id' },
       { name: 'feeAmount', label: 'subjects.fee_amount', type: 'number', required: true },
-      { name: 'teacher', label: 'subjects.teacher', type: 'select', required: true, optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' },
+      { name: 'teacher', label: 'subjects.teacher', type: 'select', optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' },
       { name: 'description', label: 'subjects.description', type: 'textarea' }
     ],
     listFields: [
@@ -362,7 +424,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     searchField: 'title',
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner'],
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent'],
       create: ['super_admin', 'admin', 'branch_manager'],
       edit: ['super_admin', 'admin', 'branch_manager'],
       delete: ['super_admin']
@@ -389,7 +451,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
         { value: 'closed', label: 'common.closed' },
         { value: 'waitlist', label: 'common.waitlist' }
       ] },
-      { name: 'imageUrl', label: 'common.image_url', type: 'text' },
+      { name: 'imageUrl', label: 'common.image_upload', type: 'file' },
       { name: 'academicCategory', label: 'common.academic_category', type: 'text' },
       { name: 'startDate', label: 'common.start_date', type: 'date' },
       { name: 'endDate', label: 'common.end_date', type: 'date' },
@@ -425,7 +487,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     searchField: 'titleText',
     permissions: {
-      view: coreRoles,
+      view: ['super_admin', 'admin', 'branch_manager', 'owner', 'teacher'],
       create: ['super_admin', 'admin', 'branch_manager', 'owner'],
       edit: ['super_admin', 'admin', 'branch_manager', 'owner'],
       delete: ['super_admin', 'admin', 'owner']
@@ -437,7 +499,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     entity: 'common.attendance_record',
     endpoint: '/attendance',
     fields: [
-      { name: 'studentId', label: 'results.student', type: 'select', required: true, optionsEndpoint: '/students', optionLabelKey: 'firstName', optionValueKey: '_id' },
+      { name: 'studentId', label: 'results.student', type: 'select', required: true, optionsEndpoint: '/students', optionLabelKey: 'studentDisplay.fullName', optionValueKey: '_id' },
       { name: 'classId', label: 'students.class', type: 'select', required: true, optionsEndpoint: '/classes', optionLabelKey: 'className', optionValueKey: '_id' },
       { name: 'attendanceDate', label: 'common.date', type: 'date', required: true },
       { name: 'session', label: 'attendance.session', type: 'select', required: true, options: [
@@ -476,10 +538,13 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     endpoint: '/exams',
     fields: [
       { name: 'title', label: 'exams.title', type: 'text', required: true },
-      { name: 'subject', label: 'exams.subject', type: 'select', required: true, optionsEndpoint: '/subjects', optionLabelKey: 'title', optionValueKey: '_id' },
       { name: 'class', label: 'exams.class', type: 'select', required: true, optionsEndpoint: '/classes', optionLabelKey: 'className', optionValueKey: '_id' },
+      { name: 'subject', label: 'exams.subject', type: 'select', required: true, optionsEndpoint: '/subjects', optionLabelKey: 'title', optionValueKey: '_id' },
       { name: 'teacherId', label: 'students.teacher', type: 'select', optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' },
       { name: 'date', label: 'exams.date', type: 'date', required: true },
+      { name: 'startTime', label: 'common.start_time', type: 'time' },
+      { name: 'endTime', label: 'common.end_time', type: 'time' },
+      { name: 'durationMinutes', label: 'common.duration_minutes', type: 'number' },
       { name: 'totalMarks', label: 'exams.total_marks', type: 'number' },
       { name: 'onlineExamUrl', label: 'common.online_exam_url', type: 'text' },
       { name: 'googleFormUrl', label: 'common.google_form_url', type: 'text' }
@@ -490,15 +555,15 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { key: 'className', label: 'exams.class' },
       { key: 'teacherName', label: 'students.teacher' },
       { key: 'date', label: 'exams.date' },
-      { key: 'onlineExamUrl', label: 'common.online_exam_url' }
+      { key: 'onlineExamUrl', label: 'common.online_exam_url' },
+      { key: 'googleFormUrl', label: 'common.google_form_url' }
     ],
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner'],
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'owner'],
       create: ['super_admin', 'admin', 'branch_manager', 'teacher'],
       edit: ['super_admin', 'admin', 'branch_manager', 'teacher'],
       delete: ['super_admin', 'admin']
-    },
-    disableDelete: true
+    }
   },
   results: {
     path: '/results',
@@ -506,7 +571,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     entity: 'common.result',
     endpoint: '/results',
     fields: [
-      { name: 'student', label: 'results.student', type: 'select', required: true, optionsEndpoint: '/students', optionLabelKey: 'firstName', optionValueKey: '_id' },
+      { name: 'student', label: 'results.student', type: 'select', required: true, optionsEndpoint: '/students', optionLabelKey: 'studentDisplay.fullName', optionValueKey: '_id' },
       { name: 'exam', label: 'results.exam', type: 'select', required: true, optionsEndpoint: '/exams', optionLabelKey: 'title', optionValueKey: '_id' },
       { name: 'score', label: 'results.score', type: 'number', required: true },
       { name: 'gradedBy', label: 'results.graded_by', type: 'select', optionsEndpoint: '/teachers', optionLabelKey: 'name', optionValueKey: '_id' }
@@ -536,7 +601,17 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     entity: 'common.payment',
     endpoint: '/payments',
     fields: [
-      { name: 'studentId', label: 'results.student', type: 'select', required: true, optionsEndpoint: '/students', optionLabelKey: 'firstName', optionValueKey: '_id' },
+      { name: 'paymentFor', label: 'payments.payment_type', type: 'select', required: true, options: [
+        { value: 'student_fee', label: 'payments.payment_type_student_fee' },
+        { value: 'teacher_salary', label: 'finance.teacher_salaries' },
+        { value: 'manager_salary', label: 'payments.payment_type_employee_salary' }
+      ] },
+      { name: 'studentId', label: 'results.student', type: 'select', optionsEndpoint: '/students', optionLabelKey: 'studentDisplay.fullName', optionValueKey: '_id' },
+      { name: 'payeeUserId', label: 'payments.employee_role', type: 'select', optionsEndpoint: '/payments/payees', optionLabelKey: 'label', optionValueKey: 'value' },
+      { name: 'payeeRole', label: 'payments.employee_role', type: 'select', options: [
+        { value: 'teacher', label: 'common.teacher' },
+        { value: 'manager', label: 'common.branch_manager' }
+      ] },
       { name: 'amount', label: 'finance.amount', type: 'number', required: true },
       { name: 'method', label: 'payments.method', type: 'select', required: true, options: [
         { value: 'cash', label: 'payments.method_cash' },
@@ -548,7 +623,19 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { name: 'notes', label: 'finance.notes', type: 'textarea' }
     ],
     listFields: [
+      { key: 'paymentFor', label: 'payments.payment_type' },
+      { key: 'studentRollNo', label: 'students.roll_no' },
       { key: 'studentName', label: 'results.student' },
+      { key: 'payeeName', label: 'payments.employee_role' },
+      { key: 'payeeRole', label: 'common.role' },
+      { key: 'grossAmount', label: 'payments.gross_amount' },
+      { key: 'taxAmount', label: 'payments.tax_amount' },
+      { key: 'netAmount', label: 'payments.net_payment' },
+      { key: 'remainingSalaryBalance', label: 'payments.remaining_balance' },
+      { key: 'className', label: 'students.class' },
+      { key: 'subjectName', label: 'students.subject' },
+      { key: 'teacherName', label: 'students.teacher' },
+      { key: 'guardianPhone', label: 'students.guardian_phone' },
       { key: 'invoiceNumber', label: 'payments.reference' },
       { key: 'amount', label: 'finance.amount' },
       { key: 'method', label: 'payments.method' },
@@ -556,7 +643,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     permissions: {
       view: ['super_admin', 'admin', 'branch_manager', 'owner', 'student', 'parent'],
-      create: ['super_admin', 'admin', 'branch_manager'],
+      create: ['super_admin', 'admin', 'branch_manager', 'owner'],
       edit: [],
       delete: []
     },
@@ -584,10 +671,10 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     permissions: {
       view: ['super_admin', 'admin', 'branch_manager', 'owner'],
-      create: ['super_admin', 'admin', 'branch_manager']
-    },
-    disableEdit: true,
-    disableDelete: true
+      create: ['super_admin', 'admin', 'branch_manager'],
+      edit: ['super_admin', 'admin', 'branch_manager'],
+      delete: ['super_admin', 'admin']
+    }
   },
   reports: {
     path: '/reports',
@@ -627,10 +714,10 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     permissions: {
       view: ['super_admin', 'admin', 'branch_manager', 'owner'],
-      create: ['super_admin', 'admin', 'branch_manager']
-    },
-    disableEdit: true,
-    disableDelete: true
+      create: ['super_admin', 'admin', 'branch_manager'],
+      edit: ['super_admin', 'admin', 'branch_manager'],
+      delete: ['super_admin', 'admin']
+    }
   },
   families: {
     path: '/families',
@@ -649,13 +736,44 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { key: 'guardianPhone', label: 'common.guardian_phone' }
     ],
     permissions: {
-      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'parent', 'owner'],
-      create: ['super_admin', 'admin', 'branch_manager', 'teacher'],
+      view: ['super_admin', 'admin', 'branch_manager', 'parent', 'owner'],
+      create: ['super_admin', 'admin', 'branch_manager'],
       edit: [],
       delete: []
     },
     disableEdit: true,
     disableDelete: true
+  },
+  books: {
+    path: '/books',
+    title: 'common.books',
+    entity: 'common.book',
+    endpoint: '/books',
+    description: 'common.books_description',
+    fields: [
+      { name: 'title', label: 'common.title', type: 'text', required: true },
+      { name: 'author', label: 'common.author', type: 'text' },
+      { name: 'isbn', label: 'common.isbn', type: 'text', required: true },
+      { name: 'category', label: 'common.category', type: 'text' },
+      { name: 'stockQuantity', label: 'common.stock_quantity', type: 'number', required: true },
+      { name: 'price', label: 'common.price', type: 'number', required: true },
+      { name: 'description', label: 'common.description', type: 'textarea' }
+    ],
+    listFields: [
+      { key: 'title', label: 'common.title' },
+      { key: 'author', label: 'common.author' },
+      { key: 'isbn', label: 'common.isbn' },
+      { key: 'category', label: 'common.category' },
+      { key: 'stockQuantity', label: 'common.stock_quantity' },
+      { key: 'price', label: 'common.price' }
+    ],
+    searchField: 'title',
+    permissions: {
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'owner'],
+      create: ['super_admin', 'admin', 'branch_manager'],
+      edit: ['super_admin', 'admin', 'branch_manager'],
+      delete: ['super_admin']
+    }
   },
   notifications: {
     path: '/notifications',
@@ -707,7 +825,7 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { key: 'publishStatus', label: 'common.status' }
     ],
     permissions: {
-      view: coreRoles,
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner'],
       create: ['super_admin', 'admin', 'branch_manager', 'teacher', 'owner'],
       edit: ['super_admin', 'admin', 'branch_manager', 'teacher', 'owner'],
       delete: ['super_admin', 'admin', 'branch_manager', 'owner']
@@ -778,7 +896,21 @@ export const modulesConfig: Record<string, ModuleConfig> = {
       { key: 'createdAt', label: 'audit.created_at' }
     ],
     permissions: {
-      view: ['super_admin', 'owner']
+      view: ['super_admin', 'admin', 'owner', 'branch_manager']
+    },
+    disableEdit: true,
+    disableDelete: true
+  },
+  messages: {
+    path: '/messages',
+    title: 'messages.title',
+    entity: 'messages.title',
+    endpoint: '/messages',
+    fields: [],
+    listFields: [],
+    permissions: {
+      view: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner'],
+      create: ['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'parent', 'owner']
     },
     disableEdit: true,
     disableDelete: true
@@ -794,6 +926,38 @@ export const modulesConfig: Record<string, ModuleConfig> = {
     ],
     permissions: {
       view: ['super_admin', 'owner']
+    },
+    disableEdit: true,
+    disableDelete: true
+  },
+  payroll: {
+    path: '/payroll',
+    title: 'common.payroll_tax',
+    entity: 'common.payroll_tax',
+    endpoint: '/payroll',
+    fields: [],
+    listFields: [],
+    permissions: {
+      view: ['super_admin', 'admin', 'branch_manager', 'owner', 'teacher'],
+      create: ['super_admin', 'admin', 'branch_manager', 'owner'],
+      edit: ['super_admin', 'admin', 'branch_manager', 'owner'],
+      delete: []
+    },
+    disableEdit: true,
+    disableDelete: true
+  },
+  academyFinancialReport: {
+    path: '/academy-financial-report',
+    title: 'common.academy_financial_report',
+    entity: 'common.academy_financial_report',
+    endpoint: '/academy-financial-report',
+    fields: [],
+    listFields: [],
+    permissions: {
+      view: ['super_admin', 'admin', 'branch_manager', 'owner'],
+      create: [],
+      edit: [],
+      delete: []
     },
     disableEdit: true,
     disableDelete: true
@@ -814,9 +978,12 @@ export interface AccessProfile {
   revokedPermissionKeys?: string[];
 }
 
+const disabledSystemPaths = new Set<string>();
+
 const modulePermissionPrefixMap: Record<string, string> = {
   dashboard: 'DASHBOARD',
   'academic-standards': 'REPORT',
+  enterprise: 'REPORT',
   users: 'USER',
   students: 'STUDENT',
   teachers: 'TEACHER',
@@ -829,14 +996,18 @@ const modulePermissionPrefixMap: Record<string, string> = {
   exams: 'EXAM',
   results: 'RESULT',
   payments: 'PAYMENT',
-  finance: 'PAYMENT',
+  finance: 'FINANCE',
+  loans: 'LOAN',
   expenses: 'EXPENSE',
+  payroll: 'SALARY',
+  'academy-financial-report': 'REPORT',
   families: 'FAMILY_LINK',
   books: 'RESOURCE',
   notifications: 'NOTIFICATION',
   reports: 'REPORT',
   audit: 'AUDIT',
   roles: 'ROLE',
+  messages: 'MESSAGE',
   permissions: 'PERMISSION',
   branches: 'BRANCH',
   'ai-assistant': 'AI_ASSISTANT'
@@ -847,6 +1018,55 @@ const enterpriseActionMap: Record<string, string> = {
   create: 'CREATE',
   update: 'UPDATE',
   delete: 'DELETE'
+};
+
+const moduleActionPermissionOverrides: Record<string, Partial<Record<string, string>>> = {
+  books: {
+    delete: 'RESOURCE_UPDATE'
+  },
+  finance: {
+    create: 'FINANCE_CREATE',
+    update: 'FINANCE_AUDIT',
+    delete: 'FINANCE_AUDIT'
+  },
+  loans: {
+    read: 'LOAN_VIEW',
+    create: 'LOAN_CREATE',
+    update: 'LOAN_APPROVE',
+    delete: 'LOAN_AUDIT'
+  },
+  reports: {
+    create: 'REPORT_GENERATE',
+    update: 'REPORT_GENERATE',
+    delete: 'REPORT_GENERATE'
+  },
+  roles: {
+    create: 'ROLE_MANAGE',
+    update: 'ROLE_MANAGE',
+    delete: 'ROLE_MANAGE'
+  },
+  permissions: {
+    create: 'PERMISSION_MANAGE',
+    update: 'PERMISSION_MANAGE',
+    delete: 'PERMISSION_MANAGE'
+  },
+  audit: {
+    create: 'AUDIT_VIEW',
+    update: 'AUDIT_VIEW',
+    delete: 'AUDIT_VIEW'
+  },
+  'ai-assistant': {
+    read: 'AI_ASSISTANT_USE'
+  },
+  'academic-standards': {
+    read: 'REPORT_VIEW'
+  },
+  enterprise: {
+    read: 'REPORT_VIEW',
+    create: 'AUDIT_VIEW',
+    update: 'CLASS_UPDATE',
+    delete: 'AUDIT_VIEW'
+  }
 };
 
 const legacyModuleAliases: Record<string, string[]> = {
@@ -862,6 +1082,8 @@ const legacyModuleAliases: Record<string, string[]> = {
   payments: ['payments', 'payment', 'finance'],
   finance: ['finance', 'payment', 'payments'],
   expenses: ['expenses', 'expense'],
+  payroll: ['payroll', 'salary', 'tax'],
+  'academy-financial-report': ['academy_financial_report', 'financial_report', 'reports'],
   families: ['families', 'family', 'family_link'],
   books: ['books', 'resource', 'resources'],
   notifications: ['notifications', 'notification'],
@@ -870,6 +1092,7 @@ const legacyModuleAliases: Record<string, string[]> = {
   permissions: ['permissions', 'permission'],
   branches: ['branches', 'branch'],
   'academic-standards': ['academic_standards', 'reports', 'report'],
+  enterprise: ['enterprise', 'dashboard', 'audit', 'reports'],
   'ai-assistant': ['ai_assistant', 'ai-assistant']
 };
 
@@ -883,20 +1106,63 @@ pathModuleMap['/dashboard/super-admin'] = 'dashboard';
 pathModuleMap['/dashboard/super-admin/master'] = 'dashboard';
 pathModuleMap['/users'] = 'users';
 pathModuleMap['/academic-standards'] = 'academic-standards';
+pathModuleMap['/enterprise'] = 'enterprise';
 pathModuleMap['/ai-assistant'] = 'ai-assistant';
+pathModuleMap['/settings'] = 'dashboard';
+pathModuleMap['/profile'] = 'dashboard';
+pathModuleMap['/messages'] = 'messages';
+pathModuleMap['/payroll'] = 'payroll';
+pathModuleMap['/academy-financial-report'] = 'academy-financial-report';
+pathModuleMap['/loans'] = 'loans';
 
 function getModuleFromPath(pathname: string) {
   return pathModuleMap[pathname] ?? pathname.replace(/^\//, '').split('/')[0];
 }
 
+export function getModuleConfigByPath(pathname: string): ModuleConfig | undefined {
+  const moduleKey = getModuleFromPath(pathname);
+  return modulesConfig[moduleKey];
+}
+
+export function superAdminModuleActions(pathname: string) {
+  const dedicatedPages = new Set(['/roles', '/messages', '/attendance', '/timetable', '/finance', '/loans', '/payments', '/reports', '/payroll']);
+  if (dedicatedPages.has(pathname)) {
+    return { canEdit: true, canDelete: false };
+  }
+
+  const config = getModuleConfigByPath(pathname);
+  if (!config) {
+    return { canEdit: true, canDelete: false };
+  }
+
+  const canEdit = !config.disableEdit && config.fields.length > 0;
+  const canDelete = !config.disableDelete && Boolean(config.permissions.delete?.includes('super_admin'));
+
+  return { canEdit, canDelete };
+}
+
 function hasEnterprisePermission(user: AccessProfile | null | undefined, moduleKey: string, action: string) {
+  const granted = new Set(user?.permissionKeys ?? []);
+  const revoked = new Set(user?.revokedPermissionKeys ?? []);
+  if (granted.has('*')) {
+    const overrideKey = moduleActionPermissionOverrides[moduleKey]?.[action];
+    if (overrideKey) return !revoked.has(overrideKey);
+    const prefix = modulePermissionPrefixMap[moduleKey];
+    const suffix = enterpriseActionMap[action];
+    if (!prefix || !suffix) return true;
+    return !revoked.has(`${prefix}_${suffix}`);
+  }
+
+  const overrideKey = moduleActionPermissionOverrides[moduleKey]?.[action];
+  if (overrideKey) {
+    return granted.has(overrideKey) && !revoked.has(overrideKey);
+  }
+
   const prefix = modulePermissionPrefixMap[moduleKey];
   const suffix = enterpriseActionMap[action];
   if (!prefix || !suffix) return false;
 
   const key = `${prefix}_${suffix}`;
-  const granted = new Set(user?.permissionKeys ?? []);
-  const revoked = new Set(user?.revokedPermissionKeys ?? []);
   return granted.has(key) && !revoked.has(key);
 }
 
@@ -908,6 +1174,15 @@ export function hasExplicitAccessProfile(user: AccessProfile | null | undefined)
   );
 }
 
+function moduleRoleAllowsAction(moduleKey: string, action: string, role: EnterpriseRole | null) {
+  if (!role) return false;
+  const config = modulesConfig[moduleKey];
+  if (!config?.permissions) return false;
+  const permissionField = action === 'read' ? 'view' : action === 'update' ? 'edit' : action;
+  const allowedRoles = config.permissions[permissionField as keyof typeof config.permissions];
+  return Array.isArray(allowedRoles) && allowedRoles.includes(role);
+}
+
 export function userHasModuleAction(user: AccessProfile | null | undefined, moduleKey: string, action: string) {
   if (!user) return false;
 
@@ -917,169 +1192,134 @@ export function userHasModuleAction(user: AccessProfile | null | undefined, modu
   const moduleAliases = legacyModuleAliases[moduleKey] ?? [moduleKey];
   const legacyActions = moduleAliases.flatMap((key) => user.permissions?.[key] ?? []);
   const legacyActionAliases = action === 'read' ? ['read', 'view'] : [action];
-  return legacyActionAliases.some((legacyAction) => legacyActions.includes(legacyAction)) || hasEnterprisePermission(user, moduleKey, action);
+  const legacyAllows = legacyActionAliases.some((legacyAction) => legacyActions.includes(legacyAction));
+  const enterpriseAllows = hasEnterprisePermission(user, moduleKey, action);
+  const roleAllows = moduleRoleAllowsAction(moduleKey, action, normalizedRole);
+
+  // When the session carries enterprise permissionKeys, those are the source of truth
+  // so sidebar links match backend route policies (e.g. parent without MESSAGE_VIEW).
+  if ((user.permissionKeys?.length ?? 0) > 0) {
+    return enterpriseAllows || legacyAllows || normalizedRole === 'super_admin';
+  }
+
+  return legacyAllows || enterpriseAllows || roleAllows;
+}
+
+export function userCanUsePathAction(user: AccessProfile | null | undefined, pathname: string, action: string) {
+  if (!user) return false;
+  const moduleKey = getModuleFromPath(pathname);
+  return userHasModuleAction(user, moduleKey, action);
+}
+
+export function isPathDeniedForRole(role: Role | string | null | undefined, pathname: string) {
+  const normalizedRole = normalizeRole(role as Role);
+  return Boolean(normalizedRole && roleDeniedPaths[normalizedRole]?.has(pathname));
 }
 
 export function userCanOpenPath(user: AccessProfile | null | undefined, pathname: string) {
   if (!user) return false;
+
+  // Core shell routes must always stay available for every signed-in role.
+  if (pathname === '/dashboard' || pathname === '/profile') return true;
+
+  const normalizedRole = normalizeRole(user.role as Role);
+  if (normalizedRole === 'student' && pathname === '/exams') return true;
+
   const moduleKey = getModuleFromPath(pathname);
-  return userHasModuleAction(user, moduleKey, 'read');
+  const config =
+    modulesConfig[moduleKey] ??
+    Object.values(modulesConfig).find((item) => item.path === pathname);
+
+  const enterpriseRead =
+    hasEnterprisePermission(user, moduleKey, 'read') ||
+    hasEnterprisePermission(user, moduleKey, 'create') ||
+    hasEnterprisePermission(user, moduleKey, 'update') ||
+    hasEnterprisePermission(user, moduleKey, 'delete');
+
+  // Role deny-list can be overridden by an explicit enterprise grant (custom family sections).
+  if (isPathDeniedForRole(user.role, pathname) && !enterpriseRead) {
+    return false;
+  }
+
+  // Keep sidebar links aligned with module view roles, unless custom grant exists.
+  if (config?.permissions?.view?.length && normalizedRole) {
+    if (!config.permissions.view.includes(normalizedRole) && !enterpriseRead) {
+      return false;
+    }
+  }
+
+  return (
+    userHasModuleAction(user, moduleKey, 'read') ||
+    userHasModuleAction(user, moduleKey, 'create') ||
+    userHasModuleAction(user, moduleKey, 'update') ||
+    userHasModuleAction(user, moduleKey, 'delete')
+  );
 }
 
+/** Single ordered nav used by every role; visibility is filtered by userCanOpenPath. */
+const masterMenu: MenuItem[] = [
+  { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
+  { path: '/academic-standards', label: 'common.academic_standards', icon: Award, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
+  { path: '/enterprise', label: 'common.enterprise_erp', icon: ShieldCheck, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
+  { path: '/branches', label: 'common.branches', icon: Building2, roles: coreRoles },
+  { path: '/users', label: 'common.users', icon: Users, roles: coreRoles },
+  { path: '/students', label: 'common.students', icon: GraduationCap, roles: coreRoles },
+  { path: '/teachers', label: 'common.teachers', icon: UserCheck, roles: coreRoles },
+  { path: '/families', label: 'common.families', icon: Users, roles: coreRoles },
+  { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
+  { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
+  { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
+  { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
+  { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
+  { path: '/exams', label: 'common.exams', icon: CalendarCheck, roles: coreRoles },
+  { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
+  { path: '/payments', label: 'common.payments', icon: AfghaniIcon, roles: coreRoles },
+  { path: '/finance', label: 'common.finance', icon: AfghaniIcon, roles: ['super_admin', 'admin', 'owner', 'branch_manager'] },
+  { path: '/loans', label: 'common.loans', icon: Wallet, roles: ['super_admin', 'admin', 'owner', 'branch_manager'] },
+  { path: '/expenses', label: 'common.expenses', icon: AfghaniIcon, roles: ['super_admin', 'admin', 'owner', 'branch_manager'] },
+  { path: '/payroll', label: 'common.payroll_tax', icon: AfghaniIcon, roles: ['super_admin', 'admin', 'owner', 'branch_manager', 'teacher'] },
+  { path: '/academy-financial-report', label: 'common.academy_financial_report', icon: AfghaniIcon, roles: ['super_admin', 'admin', 'owner', 'branch_manager'] },
+  { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
+  { path: '/books', label: 'common.books', icon: BookOpen, roles: coreRoles },
+  { path: '/messages', label: 'messages.title', icon: MessageSquare, roles: coreRoles },
+  { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
+  { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
+  { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['super_admin', 'admin', 'teacher', 'owner', 'branch_manager', 'system_automation'] },
+  { path: '/audit', label: 'common.audit_logs', icon: ShieldCheck, roles: coreRoles },
+  { path: '/roles', label: 'common.roles', icon: ShieldCheck, roles: coreRoles }
+];
+
 const menuConfig: Record<EnterpriseRole, MenuItem[]> = {
-  super_admin: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/academic-standards', label: 'common.academic_standards', icon: Award, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
-    { path: '/branches', label: 'common.branches', icon: Building2, roles: coreRoles },
-    { path: '/users', label: 'common.users', icon: Users, roles: coreRoles },
-    { path: '/students', label: 'common.students', icon: GraduationCap, roles: coreRoles },
-    { path: '/teachers', label: 'common.teachers', icon: UserCheck, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/exams', label: 'common.exams', icon: CalendarCheck, roles: coreRoles },
-    { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
-    { path: '/payments', label: 'common.payments', icon: Receipt, roles: coreRoles },
-    { path: '/finance', label: 'common.finance', icon: DollarSign, roles: coreRoles },
-    { path: '/expenses', label: 'common.expenses', icon: CreditCard, roles: coreRoles },
-    { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['super_admin', 'admin', 'teacher', 'owner', 'branch_manager', 'system_automation'] },
-    { path: '/audit', label: 'common.audit_logs', icon: ShieldCheck, roles: coreRoles },
-    { path: '/roles', label: 'common.roles', icon: ShieldCheck, roles: coreRoles }
-  ],
-  admin: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/academic-standards', label: 'common.academic_standards', icon: Award, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
-    { path: '/branches', label: 'common.branches', icon: Building2, roles: coreRoles },
-    { path: '/students', label: 'common.students', icon: GraduationCap, roles: coreRoles },
-    { path: '/teachers', label: 'common.teachers', icon: UserCheck, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/exams', label: 'common.exams', icon: CalendarCheck, roles: coreRoles },
-    { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
-    { path: '/payments', label: 'common.payments', icon: Receipt, roles: coreRoles },
-    { path: '/finance', label: 'common.finance', icon: DollarSign, roles: coreRoles },
-    { path: '/expenses', label: 'common.expenses', icon: CreditCard, roles: coreRoles },
-    { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['super_admin', 'admin', 'teacher', 'branch_manager'] }
-  ],
-  teacher: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/students', label: 'common.students', icon: GraduationCap, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/exams', label: 'common.exams', icon: CalendarCheck, roles: coreRoles },
-    { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['teacher'] }
-  ],
-  student: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
-    { path: '/payments', label: 'common.payments', icon: Receipt, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles }
-  ],
-  parent: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/families', label: 'common.families', icon: Users, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/results', label: 'common.results', icon: FileText, roles: coreRoles },
-    { path: '/payments', label: 'common.payments', icon: Receipt, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles }
-  ],
-  owner: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/academic-standards', label: 'common.academic_standards', icon: Award, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
-    { path: '/branches', label: 'common.branches', icon: Building2, roles: coreRoles },
-    { path: '/finance', label: 'common.finance', icon: DollarSign, roles: coreRoles },
-    { path: '/expenses', label: 'common.expenses', icon: CreditCard, roles: coreRoles },
-    { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
-    { path: '/audit', label: 'common.audit_logs', icon: ShieldCheck, roles: coreRoles },
-    { path: '/roles', label: 'common.roles', icon: ShieldCheck, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['owner'] }
-  ],
-  branch_manager: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/academic-standards', label: 'common.academic_standards', icon: Award, roles: ['super_admin', 'admin', 'branch_manager', 'owner'] },
-    { path: '/branches', label: 'common.branches', icon: Building2, roles: coreRoles },
-    { path: '/students', label: 'common.students', icon: GraduationCap, roles: coreRoles },
-    { path: '/teachers', label: 'common.teachers', icon: UserCheck, roles: coreRoles },
-    { path: '/classes', label: 'common.classes', icon: Layers, roles: coreRoles },
-    { path: '/timetable', label: 'common.timetable', icon: CalendarDays, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/subjects', label: 'common.subjects', icon: BookOpen, roles: coreRoles },
-    { path: '/attendance', label: 'common.attendance', icon: ClipboardList, roles: coreRoles },
-    { path: '/payments', label: 'common.payments', icon: Receipt, roles: coreRoles },
-    { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['branch_manager'] }
-  ],
-  system_automation: [
-    { path: '/dashboard', label: 'common.dashboard', icon: Home, roles: coreRoles },
-    { path: '/reports', label: 'common.reports', icon: Activity, roles: coreRoles },
-    { path: '/notifications', label: 'common.notifications', icon: Bell, roles: coreRoles },
-    { path: '/courses', label: 'common.courses', icon: BookOpen, roles: coreRoles },
-    { path: '/curriculum', label: 'common.curriculum', icon: BookOpen, roles: coreRoles },
-    { path: '/ai-assistant', label: 'common.ai_assistant', icon: BrainCircuit, roles: ['system_automation'] }
-  ]
+  super_admin: masterMenu,
+  admin: masterMenu,
+  teacher: masterMenu,
+  student: masterMenu,
+  parent: masterMenu,
+  owner: masterMenu,
+  branch_manager: masterMenu,
+  system_automation: masterMenu
 };
 
 export function getMenuForRole(role: Role | null) {
   const normalizedRole = normalizeRole(role);
   if (!normalizedRole) return [];
-  return menuConfig[normalizedRole] ?? [];
+  return masterMenu.filter((item) => !disabledSystemPaths.has(item.path));
 }
 
 export function getMenuForUser(user: AccessProfile | null | undefined) {
-  const normalizedRole = normalizeRole(user?.role);
-  const roleMenu = normalizedRole ? menuConfig[normalizedRole] ?? [] : [];
-  const allItems = Object.values(menuConfig).flat();
-  const uniqueItems = new Map<string, MenuItem>();
-  const strictPermissions = hasExplicitAccessProfile(user);
+  if (!user) return [];
 
-  for (const item of [...roleMenu, ...allItems]) {
-    if (uniqueItems.has(item.path)) continue;
-    const roleAllowed = Boolean(normalizedRole && item.roles.includes(normalizedRole));
-    const permissionAllowed = userCanOpenPath(user, item.path);
-    if ((strictPermissions && permissionAllowed) || (!strictPermissions && (roleAllowed || permissionAllowed))) {
-      uniqueItems.set(item.path, item);
-    }
-  }
-
-  return Array.from(uniqueItems.values());
+  // Same link order/style for every account; only permitted sections are shown.
+  return masterMenu.filter(
+    (item) => !disabledSystemPaths.has(item.path) && userCanOpenPath(user, item.path)
+  );
 }
 
 export function getRouteLabel(role: Role | null, pathname: string) {
-  const items = getMenuForRole(role);
-  const item = items.find((route) => route.path === pathname);
-  return item?.label || 'common.dashboard';
+  const exact = masterMenu.find((route) => route.path === pathname);
+  if (exact) return exact.label;
+  if (pathname.startsWith('/dashboard')) return 'common.dashboard';
+  return 'common.dashboard';
 }
 
 export const allModuleConfigs = Object.values(modulesConfig);

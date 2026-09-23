@@ -1,17 +1,51 @@
 import { Router } from 'express';
 import { Request } from 'express';
 import Joi from 'joi';
+import mongoose from 'mongoose';
 import { StudentService } from '../../services/studentService';
+import { resolveHttpStatus } from '../../utils/httpErrors';
 import { Student } from '../../models/Student';
 import { User } from '../../models/User';
-import { authenticate } from '../../middlewares/auth';
+import { authenticate, authorize } from '../../middlewares/auth';
 import { requireAdmin, requireFamily, requireTeacher } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import { createResponse, createError } from '../../helpers/response';
 import { paginationSchema } from '../../validators/pagination';
+import { resolveStudentContext } from '../../utils/studentScope';
+import { Timetable } from '../../models/Timetable';
+import { Payment } from '../../models/Payment';
+import { Result } from '../../models/Result';
+import { Attendance } from '../../models/Attendance';
+import { Subject } from '../../models/Subject';
+import { ClassModel } from '../../models/Class';
+import { listRecordFilter } from '../../utils/recordVisibility';
+import { restoreSoftDeletedRecord } from '../../utils/softDeleteRestore';
+import { enrichStudentWithDisplay, enrichStudentsWithDisplay, studentPopulatePaths } from '../../utils/studentDisplay';
+import { afghanPhoneField, personNameField } from '../../validators/fieldSchemas';
+import {
+  buildMongoDateRange,
+  buildPaginationMeta,
+  parseMultiQueryValue,
+  parsePagination,
+  resolveSort
+} from '../../utils/listQuery';
 
 const router = Router();
 const studentService = new StudentService();
+
+async function assertBranchManagerStudentAccess(req: Request, studentId: string) {
+  if (req.user?.canonicalRole !== 'branch_manager' || !req.user.branchId) {
+    return null;
+  }
+  const student = await Student.findOne({ _id: studentId, isDeleted: false }).select('branchId').lean<any>();
+  if (!student) {
+    return createError('Student not found');
+  }
+  if (String(student.branchId ?? '') !== String(req.user.branchId)) {
+    return createError('Branch access denied');
+  }
+  return null;
+}
 
 function serializeStudent(student: any) {
   const classRef = student?.classId;
@@ -26,38 +60,55 @@ function serializeStudent(student: any) {
     className: classRef?.name ?? classRef?.className ?? '',
     subjectName: subjectRef?.title ?? '',
     teacherName: teacherRef?.name ?? '',
-    classCode: classRef?.classCode ?? ''
+    classCode: classRef?.classCode ?? '',
+    studentDisplay: student?.studentDisplay ?? {
+      studentNumber: student?.studentNumber ?? student?.rollNo ?? student?.studentId ?? '',
+      fullName: student?.fullName ?? [student?.firstName, student?.lastName].filter(Boolean).join(' '),
+      className: classRef?.name ?? classRef?.className ?? student?.className ?? '',
+      subjectName: subjectRef?.title ?? student?.subjectName ?? '',
+      teacherName: teacherRef?.name ?? student?.teacherName ?? '',
+      guardianPhone: student?.guardianPhone ?? student?.familyPhone ?? '',
+      studentPhone: student?.studentPhone ?? student?.phone ?? student?.whatsapp ?? '',
+      branchName: student?.branchName ?? '',
+      enrollmentStatus: student?.enrollmentStatus ?? student?.status ?? student?.accountStatus ?? ''
+    }
   };
 }
 
 const registerStudentSchema = Joi.object({
   body: Joi.object({
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
-    fatherName: Joi.string().required(),
-    familyPhone: Joi.string().required(),
+    firstName: personNameField(true),
+    lastName: personNameField(true),
+    fatherName: personNameField(true),
+    familyPhone: afghanPhoneField(false),
+    phone: afghanPhoneField(false),
+    whatsapp: afghanPhoneField(false),
     loginEmail: Joi.string().email().allow('', null).optional(),
-    loginPassword: Joi.string().min(4).max(32).allow('', null).optional(),
+    loginPassword: Joi.string().min(1).max(256).allow('', null).optional(),
     profileImage: Joi.string().allow('', null).optional(),
     gender: Joi.string().valid('male', 'female', 'other').required(),
     branchId: Joi.string().hex().length(24).optional(),
     classId: Joi.string().hex().length(24).required(),
     subjectId: Joi.string().hex().length(24).required(),
     teacherId: Joi.string().hex().length(24).required(),
-    feeAmount: Joi.number().min(0).required(),
+    feeAmount: Joi.number().min(0).optional(),
     paidAmount: Joi.number().min(0).optional(),
+    registrationStartDate: Joi.date().optional(),
+    registrationEndDate: Joi.date().optional(),
     registrationExpiryDate: Joi.date().optional()
   })
 });
 
 const updateStudentSchema = Joi.object({
   body: Joi.object({
-    firstName: Joi.string().optional(),
-    lastName: Joi.string().optional(),
-    fatherName: Joi.string().optional(),
-    familyPhone: Joi.string().optional(),
+    firstName: personNameField(false),
+    lastName: personNameField(false),
+    fatherName: personNameField(false),
+    familyPhone: afghanPhoneField(false),
+    phone: afghanPhoneField(false),
+    whatsapp: afghanPhoneField(false),
     loginEmail: Joi.string().email().allow('', null).optional(),
-    loginPassword: Joi.string().min(4).max(32).allow('', null).optional(),
+    loginPassword: Joi.string().min(1).max(256).allow('', null).optional(),
     profileImage: Joi.string().allow('', null).optional(),
     gender: Joi.string().valid('male', 'female', 'other').optional(),
     branchId: Joi.string().hex().length(24).optional(),
@@ -66,7 +117,10 @@ const updateStudentSchema = Joi.object({
     teacherId: Joi.string().hex().length(24).optional(),
     feeAmount: Joi.number().min(0).optional(),
     paidAmount: Joi.number().min(0).optional(),
+    registrationStartDate: Joi.date().optional(),
+    registrationEndDate: Joi.date().optional(),
     registrationExpiryDate: Joi.date().allow(null).optional(),
+    accountStatus: Joi.string().valid('active', 'warning', 'expired', 'blocked').optional(),
     status: Joi.string().valid('active', 'inactive', 'suspended', 'graduated').optional()
   }).min(1)
 });
@@ -76,12 +130,14 @@ const updateStudentWithIdSchema = Joi.object({
     id: Joi.string().hex().length(24).required()
   }),
   body: Joi.object({
-    firstName: Joi.string().optional(),
-    lastName: Joi.string().optional(),
-    fatherName: Joi.string().optional(),
-    familyPhone: Joi.string().optional(),
+    firstName: personNameField(false),
+    lastName: personNameField(false),
+    fatherName: personNameField(false),
+    familyPhone: afghanPhoneField(false),
+    phone: afghanPhoneField(false),
+    whatsapp: afghanPhoneField(false),
     loginEmail: Joi.string().email().allow('', null).optional(),
-    loginPassword: Joi.string().min(4).max(32).allow('', null).optional(),
+    loginPassword: Joi.string().min(1).max(256).allow('', null).optional(),
     profileImage: Joi.string().allow('', null).optional(),
     gender: Joi.string().valid('male', 'female', 'other').optional(),
     branchId: Joi.string().hex().length(24).optional(),
@@ -90,9 +146,22 @@ const updateStudentWithIdSchema = Joi.object({
     teacherId: Joi.string().hex().length(24).optional(),
     feeAmount: Joi.number().min(0).optional(),
     paidAmount: Joi.number().min(0).optional(),
+    registrationStartDate: Joi.date().optional(),
+    registrationEndDate: Joi.date().optional(),
     registrationExpiryDate: Joi.date().allow(null).optional(),
+    accountStatus: Joi.string().valid('active', 'warning', 'expired', 'blocked').optional(),
     status: Joi.string().valid('active', 'inactive', 'suspended', 'graduated').optional()
   }).min(1)
+});
+
+const renewRegistrationSchema = Joi.object({
+  params: Joi.object({ id: Joi.string().hex().length(24).required() }),
+  body: Joi.object({
+    registrationStartDate: Joi.date().required(),
+    registrationEndDate: Joi.date().required(),
+    feeAmount: Joi.number().min(0).optional(),
+    paidAmount: Joi.number().min(0).optional()
+  })
 });
 
 const idParamsSchema = Joi.object({
@@ -103,11 +172,18 @@ const idParamsSchema = Joi.object({
 
 router.use(authenticate);
 
+function respondWithRouteError(res: any, error: unknown, fallbackMessage: string) {
+  const status = resolveHttpStatus(error);
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  if (status >= 500) {
+    console.error(fallbackMessage, error);
+  }
+  return res.status(status).json(createError(message || fallbackMessage));
+}
+
 // Register student - admin only
 router.post('/', requireAdmin, validate(registerStudentSchema), async (req: Request, res) => {
   try {
-    console.log('Incoming data:', req.body);
-
     const classId = req.body.classId || req.body.class;
     const subjectId = req.body.subjectId || req.body.subject;
     const teacherId = req.body.teacherId || req.body.teacher;
@@ -126,39 +202,85 @@ router.post('/', requireAdmin, validate(registerStudentSchema), async (req: Requ
       teacherId,
       createdBy: req.user?.userId ?? null
     });
-    console.log('Saved student:', student);
-    res.status(201).json(createResponse(student, 'Student registered successfully'));
+    res.status(201).json(createResponse(await enrichStudentWithDisplay(student.toObject ? student.toObject() : student), 'Student registered successfully'));
   } catch (error: any) {
-    console.error('Student create error:', error);
-    res.status(500).json(createError(String(error?.message || 'Failed to register student')));
+    if (error instanceof mongoose.Error.ValidationError) {
+      return res.status(400).json(createError(error.message));
+    }
+    return respondWithRouteError(res, error, 'Failed to register student');
   }
 });
 
 router.put('/:id', requireAdmin, validate(updateStudentWithIdSchema), async (req: Request, res) => {
   try {
-    const updatedStudent = await studentService.updateStudent(req.params.id, req.body);
+    const branchError = await assertBranchManagerStudentAccess(req, req.params.id);
+    if (branchError) return res.status(403).json(branchError);
+    const updatedStudent = await studentService.updateStudent(req.params.id, { ...req.body, updatedBy: req.user?.userId ?? null });
     if (!updatedStudent) {
       return res.status(404).json(createError('Student not found'));
     }
-    res.json(createResponse(updatedStudent, 'Student updated successfully'));
+    res.json(createResponse(await enrichStudentWithDisplay(updatedStudent.toObject ? updatedStudent.toObject() : updatedStudent), 'Student updated successfully'));
   } catch (error: any) {
-    res.status(500).json(createError(String(error?.message || 'Failed to update student')));
+    if (error instanceof mongoose.Error.ValidationError) {
+      return res.status(400).json(createError(error.message));
+    }
+    return respondWithRouteError(res, error, 'Failed to update student');
   }
 });
 
-router.get('/', requireTeacher, validate(paginationSchema), async (req, res) => {
+router.post('/:id/renew-registration', requireAdmin, validate(renewRegistrationSchema), async (req: Request, res) => {
   try {
-    const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 20);
+    const branchError = await assertBranchManagerStudentAccess(req, req.params.id);
+    if (branchError) return res.status(403).json(branchError);
+    const student = await studentService.renewRegistration(req.params.id, { ...req.body, actorId: req.user?.userId ?? null });
+    if (!student) return res.status(404).json(createError('Student not found'));
+    res.json(createResponse(student, 'Student registration renewed successfully'));
+  } catch (error: any) {
+    res.status(400).json(createError(String(error?.message || 'Failed to renew registration')));
+  }
+});
+
+router.post('/:id/block', requireAdmin, validate(idParamsSchema), async (req: Request, res) => {
+  try {
+    const branchError = await assertBranchManagerStudentAccess(req, req.params.id);
+    if (branchError) return res.status(403).json(branchError);
+    const student = await studentService.setBlockStatus(req.params.id, true, req.user?.userId ?? null);
+    if (!student) return res.status(404).json(createError('Student not found'));
+    res.json(createResponse(student, 'Student account blocked successfully'));
+  } catch (error: any) {
+    res.status(400).json(createError(String(error?.message || 'Failed to block student')));
+  }
+});
+
+router.post('/:id/unblock', requireAdmin, validate(idParamsSchema), async (req: Request, res) => {
+  try {
+    const branchError = await assertBranchManagerStudentAccess(req, req.params.id);
+    if (branchError) return res.status(403).json(branchError);
+    const student = await studentService.setBlockStatus(req.params.id, false, req.user?.userId ?? null);
+    if (!student) return res.status(404).json(createError('Student not found'));
+    res.json(createResponse(student, 'Student account unblocked successfully'));
+  } catch (error: any) {
+    res.status(400).json(createError(String(error?.message || 'Failed to unblock student')));
+  }
+});
+
+router.get('/', authorize(['super_admin', 'admin', 'owner', 'branch_manager', 'teacher', 'student', 'family_student', 'parent']), validate(paginationSchema), async (req, res) => {
+  try {
+    const { page, limit, skip } = parsePagination(req.query as Record<string, unknown>, {
+      limit: 50,
+      maxLimit: 5000
+    });
     const search = String(req.query.search || '').trim();
-    const filter: any = { isDeleted: false };
+    const filter: any = { ...listRecordFilter(req.user) };
 
     if (search) {
       filter.$or = [
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
         { fatherName: { $regex: search, $options: 'i' } },
-        { familyPhone: { $regex: search, $options: 'i' } }
+        { familyPhone: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } },
+        { rollNo: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -166,20 +288,90 @@ router.get('/', requireTeacher, validate(paginationSchema), async (req, res) => 
       filter.teacherId = req.user.userId;
     }
 
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    } else if (req.query.branchId && ['super_admin', 'admin', 'branch_manager', 'owner'].includes(String(req.user?.canonicalRole))) {
+      filter.branchId = req.query.branchId;
+    }
+
+    if (req.query.status) {
+      const statuses = parseMultiQueryValue(req.query.status);
+      if (statuses.length === 1) filter.status = statuses[0];
+      else if (statuses.length > 1) filter.status = { $in: statuses };
+    }
+
+    if (req.query.classId) filter.classId = req.query.classId;
+    if (req.query.subjectId) filter.subjectId = req.query.subjectId;
+    if (req.query.teacherId && ['super_admin', 'admin', 'owner', 'branch_manager'].includes(String(req.user?.canonicalRole))) {
+      filter.teacherId = req.query.teacherId;
+    }
+
+    try {
+      const dateRange = buildMongoDateRange({
+        period: req.query.period as string,
+        from: req.query.from,
+        to: req.query.to
+      });
+      if (dateRange) {
+        filter.createdAt = dateRange;
+      }
+    } catch (error: any) {
+      return res.status(error?.statusCode || 400).json(createError(error.message || 'Invalid date range'));
+    }
+
+    if (req.user?.canonicalRole === 'student') {
+      const context = await resolveStudentContext(req);
+      filter._id = context?.studentDocId ?? { $in: [] };
+    }
+
+    if (req.user?.canonicalRole === 'parent' || req.user?.role === 'family_student') {
+      const currentUser = await User.findById(req.user?.userId).select('familyId parentProfileId').lean<Record<string, any>>();
+      const familyStudents = await Student.find({
+        isDeleted: false,
+        ...(currentUser?.familyId ? { familyId: currentUser.familyId } : {}),
+        ...(!currentUser?.familyId && currentUser?.parentProfileId ? { parentProfileId: currentUser.parentProfileId } : {})
+      }).select('_id').lean();
+      filter._id = { $in: familyStudents.map((student) => student._id) };
+    }
+
+    const sort = resolveSort(
+      req.query as Record<string, unknown>,
+      {
+        name: 'firstName',
+        firstName: 'firstName',
+        date: 'createdAt',
+        createdAt: 'createdAt',
+        status: 'status',
+        remainingBalance: 'remainingBalance'
+      },
+      { createdAt: -1 }
+    );
+
     const [students, total] = await Promise.all([
-      Student.find(filter)
-        .populate('classId', 'className name classCode')
-        .populate('subjectId', 'title code')
-        .populate('teacherId', 'name email')
+      studentPopulatePaths.reduce((query: any, populate) => query.populate(populate), Student.find(filter))
         .lean()
-        .skip((page - 1) * limit)
+        .sort(sort)
+        .skip(skip)
         .limit(limit),
       Student.countDocuments(filter)
     ]);
 
-    res.json(createResponse(students.map(serializeStudent), '', { page, limit, total }));
+    const normalizedStudents = await enrichStudentsWithDisplay(students);
+    res.json(createResponse(normalizedStudents.map(serializeStudent), '', buildPaginationMeta(page, limit, total)));
   } catch (error: any) {
     res.status(500).json(createError(String(error?.message || 'Failed to fetch students')));
+  }
+});
+
+router.patch('/:id/restore', authorize(['super_admin']), validate(idParamsSchema), async (req, res) => {
+  try {
+    const restored = await restoreSoftDeletedRecord(Student, req.params.id);
+    if (!restored) {
+      return res.status(404).json(createError('Student not found'));
+    }
+    res.json(createResponse(restored, 'Student restored successfully'));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to restore student')));
   }
 });
 
@@ -205,7 +397,7 @@ router.get('/family', requireFamily, async (req, res) => {
       return res.json(createResponse([]));
     }
     const students = await studentService.getStudentsByFamily(familyId);
-    const normalizedStudents = students.map((student) => serializeStudent(student.toObject()));
+    const normalizedStudents = await enrichStudentsWithDisplay(students.map((student) => student.toObject()));
     res.json(createResponse(normalizedStudents));
   } catch (error) {
     res.status(500).json(createError('Failed to fetch students'));
@@ -213,6 +405,144 @@ router.get('/family', requireFamily, async (req, res) => {
 });
 
 // Get students by teacher - teacher only
+router.get('/me/dashboard', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.student && !context?.user) {
+      return res.status(404).json(createError('Student profile not found'));
+    }
+
+    const studentDocId = context.studentDocId;
+    const userId = req.user?.userId;
+    const [payments, results, attendanceCount] = await Promise.all([
+      studentDocId
+        ? Payment.find({ studentId: studentDocId, isDeleted: false }).sort({ createdAt: -1 }).limit(5).lean()
+        : [],
+      Result.find({ student: userId, isDeleted: false }).sort({ createdAt: -1 }).limit(5).lean(),
+      Attendance.countDocuments({ userId, isDeleted: false })
+    ]);
+
+    res.json(createResponse({
+      profile: {
+        name: context.user.name,
+        email: context.user.email,
+        phone: context.user.phone,
+        studentId: context.student?.studentId ?? context.user.studentId,
+        class: context.student?.classId ?? null,
+        subject: context.student?.subjectId ?? null,
+        teacher: context.student?.teacherId ?? null,
+        feeAmount: context.student?.feeAmount ?? context.user.feeAmount,
+        remainingBalance: context.student?.remainingBalance ?? context.user.remainingBalance
+      },
+      payments,
+      results,
+      attendanceCount
+    }));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load student dashboard')));
+  }
+});
+
+router.get('/me/profile', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context) return res.status(404).json(createError('Student profile not found'));
+    res.json(createResponse({
+      user: context.user,
+      student: context.student ? await enrichStudentWithDisplay(serializeStudent(context.student)) : null
+    }));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load profile')));
+  }
+});
+
+router.get('/me/classes', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.classId) return res.json(createResponse([]));
+    const klass = await ClassModel.findOne({ _id: context.classId, isDeleted: false })
+      .populate('assignedTeachers', 'name email')
+      .populate('assignedSubjects', 'title code')
+      .lean();
+    res.json(createResponse(klass ? [klass] : []));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load classes')));
+  }
+});
+
+router.get('/me/subjects', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.subjectId) return res.json(createResponse([]));
+    const subject = await Subject.findOne({ _id: context.subjectId, isDeleted: false }).lean();
+    res.json(createResponse(subject ? [subject] : []));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load subjects')));
+  }
+});
+
+router.get('/me/teachers', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.teacherId) return res.json(createResponse([]));
+    const teacher = await User.findOne({ _id: context.teacherId, role: 'teacher', isDeleted: false })
+      .select('name email phone whatsapp')
+      .lean();
+    res.json(createResponse(teacher ? [teacher] : []));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load teachers')));
+  }
+});
+
+router.get('/me/timetable', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.classId) return res.json(createResponse([]));
+    const items = await Timetable.find({ classId: context.classId, isDeleted: false })
+      .populate('subjectId', 'title code')
+      .populate('teacherId', 'name email')
+      .sort({ dayOfWeek: 1, startTime: 1 })
+      .lean();
+    res.json(createResponse(items));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load timetable')));
+  }
+});
+
+router.get('/me/payments', async (req, res) => {
+  try {
+    if (req.user?.canonicalRole !== 'student') {
+      return res.status(403).json(createError('Forbidden'));
+    }
+    const context = await resolveStudentContext(req);
+    if (!context?.studentDocId) return res.json(createResponse([]));
+    const payments = await Payment.find({ studentId: context.studentDocId, isDeleted: false })
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json(createResponse(payments));
+  } catch (error: any) {
+    res.status(500).json(createError(String(error?.message || 'Failed to load payments')));
+  }
+});
+
 router.get('/teacher', requireTeacher, async (req, res) => {
   try {
     const teacherId = req.user?.userId;
@@ -220,14 +550,14 @@ router.get('/teacher', requireTeacher, async (req, res) => {
       return res.status(401).json(createError('Authentication required'));
     }
     const students = await studentService.getStudentsByTeacher(teacherId);
-    const normalizedStudents = students.map((student) => serializeStudent(student.toObject()));
+    const normalizedStudents = await enrichStudentsWithDisplay(students.map((student) => student.toObject()));
     res.json(createResponse(normalizedStudents));
   } catch (error) {
     res.status(500).json(createError('Failed to fetch students'));
   }
 });
 
-router.get('/:id', requireTeacher, validate(idParamsSchema), async (req, res) => {
+router.get('/:id', authorize(['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'family_student', 'parent']), validate(idParamsSchema), async (req, res) => {
   try {
     const filter: Record<string, unknown> = {
       _id: req.params.id,
@@ -238,17 +568,41 @@ router.get('/:id', requireTeacher, validate(idParamsSchema), async (req, res) =>
       filter.teacherId = req.user.userId;
     }
 
-    const student = await Student.findOne(filter)
-      .populate('classId', 'className name classCode')
-      .populate('subjectId', 'title code')
-      .populate('teacherId', 'name email')
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
+
+    if (req.user?.canonicalRole === 'student') {
+      const context = await resolveStudentContext(req);
+      if (String(context?.studentDocId ?? '') !== String(req.params.id)) {
+        return res.status(404).json(createError('Student not found'));
+      }
+    }
+
+    if (req.user?.canonicalRole === 'parent' || req.user?.role === 'family_student') {
+      const currentUser = await User.findById(req.user?.userId).select('familyId parentProfileId').lean<Record<string, any>>();
+      const familyFilter: Record<string, unknown> = { isDeleted: false };
+      if (currentUser?.familyId) {
+        familyFilter.familyId = currentUser.familyId;
+      } else if (currentUser?.parentProfileId) {
+        familyFilter.parentProfileId = currentUser.parentProfileId;
+      } else {
+        return res.status(404).json(createError('Student not found'));
+      }
+      const linkedStudent = await Student.findOne({ ...familyFilter, _id: req.params.id }).select('_id').lean();
+      if (!linkedStudent) {
+        return res.status(404).json(createError('Student not found'));
+      }
+    }
+
+    const student = await studentPopulatePaths.reduce((query: any, populate) => query.populate(populate), Student.findOne(filter))
       .lean();
 
     if (!student) {
       return res.status(404).json(createError('Student not found'));
     }
 
-    res.json(createResponse(serializeStudent(student)));
+    res.json(createResponse(serializeStudent(await enrichStudentWithDisplay(student))));
   } catch (error: any) {
     res.status(500).json(createError(String(error?.message || 'Failed to fetch student')));
   }

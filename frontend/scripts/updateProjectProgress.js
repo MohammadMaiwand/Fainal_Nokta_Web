@@ -12,6 +12,11 @@ const progress = {
   homePageCompleted: true,
   loginPageCompleted: true,
   routesProtected: true,
+  productionReadiness: true,
+  ciPipeline: true,
+  automatedTests: true,
+  apiDocumentation: true,
+  legalPages: true,
   pendingTasks: [],
   lastUpdated: new Date().toISOString()
 };

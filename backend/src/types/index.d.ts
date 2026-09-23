@@ -8,6 +8,9 @@ export interface ApiResponse<T = unknown> {
     page: number;
     limit: number;
     total: number;
+    totalPages?: number;
+    hasNextPage?: boolean;
+    hasPreviousPage?: boolean;
   };
 }
 
@@ -20,6 +23,8 @@ export interface AuthenticatedUser {
   branchId?: string | null;
   sessionId?: string | null;
   permissionKeys?: PermissionKey[];
+  revokedPermissionKeys?: PermissionKey[];
+  permissions?: Record<string, string[]>;
   rolePermissionKeys?: PermissionKey[];
 }
 

@@ -59,10 +59,11 @@ export class CourseService {
     const payload: Record<string, any> = { ...body };
     const teacherId = body.teacher ?? body.instructor;
     const branchId = body.branch ?? body.branchId;
+    const isBranchManager = req.user?.canonicalRole === 'branch_manager' && req.user.branchId;
 
     payload.teacher = normalizeId(teacherId);
     payload.instructor = normalizeId(teacherId);
-    payload.branchId = normalizeId(branchId) ?? req.user?.branchId ?? null;
+    payload.branchId = isBranchManager ? req.user?.branchId ?? null : (normalizeId(branchId) ?? req.user?.branchId ?? null);
     payload.category = body.category ?? body.academicCategory ?? 'general';
     payload.academicCategory = payload.category;
 
@@ -90,18 +91,36 @@ export class CourseService {
     if (payload.subjects?.length && subjectCount !== payload.subjects.length) throw new Error('One or more selected subjects do not exist');
   }
 
-  async list(query: any, publicOnly = false, homeOnly = false) {
+  async list(query: any, publicOnly = false, homeOnly = false, req?: Request) {
     const page = Number(query.page || 1);
     const limit = Number(query.limit || (homeOnly ? 6 : 20));
     const search = String(query.search || '').trim();
     const language = String(query.lang || 'en');
     const filter: any = { isDeleted: false };
 
+    if (!publicOnly && req?.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
+
+    if (!publicOnly && req?.user?.canonicalRole === 'teacher' && req.user.userId) {
+      filter.$and = [
+        ...(Array.isArray(filter.$and) ? filter.$and : []),
+        { $or: [{ teacher: req.user.userId }, { instructor: req.user.userId }] }
+      ];
+    }
+
     if (publicOnly) {
       filter.status = 'active';
       filter.visibility = 'public';
+      filter.$or = [
+        { enrollmentStatus: 'open' },
+        { registrationOpen: true }
+      ];
     }
-    if (homeOnly) filter.featured = true;
+    if (homeOnly) {
+      // Home page shows all active public offerings, not only featured items.
+      delete filter.featured;
+    }
     if (query.status) filter.status = query.status;
     if (query.visibility) filter.visibility = query.visibility;
     if (query.featured !== undefined) filter.featured = query.featured;
@@ -147,8 +166,18 @@ export class CourseService {
     return serializeCourse(saved, String(req.query.lang || 'en'));
   }
 
-  async getById(id: string, language = 'en') {
-    const course = await Course.findOne({ _id: id, isDeleted: false }).populate('teacher', 'name email').populate('instructor', 'name email').populate('subjects', 'title code').lean();
+  async getById(id: string, language = 'en', req?: Request) {
+    const filter: Record<string, unknown> = { _id: id, isDeleted: false };
+    if (req?.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
+    if (req?.user?.canonicalRole === 'teacher' && req.user.userId) {
+      filter.$or = [
+        { teacher: req.user.userId },
+        { instructor: req.user.userId }
+      ];
+    }
+    const course = await Course.findOne(filter).populate('teacher', 'name email').populate('instructor', 'name email').populate('subjects', 'title code').lean();
     return course ? serializeCourse(course, language) : null;
   }
 
@@ -156,7 +185,11 @@ export class CourseService {
     const payload = this.normalizePayload(req, req.body);
     payload.updatedBy = req.user?.userId ?? null;
     await this.assertRelations(payload);
-    const course = await Course.findOneAndUpdate({ _id: req.params.id, isDeleted: false }, payload, { new: true, runValidators: true })
+    const filter: Record<string, unknown> = { _id: req.params.id, isDeleted: false };
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
+    const course = await Course.findOneAndUpdate(filter, payload, { new: true, runValidators: true })
       .populate('teacher', 'name email')
       .populate('instructor', 'name email')
       .populate('subjects', 'title code')
@@ -165,8 +198,12 @@ export class CourseService {
   }
 
   async softDelete(req: Request) {
+    const filter: Record<string, unknown> = { _id: req.params.id, isDeleted: false };
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
     return Course.findOneAndUpdate(
-      { _id: req.params.id, isDeleted: false },
+      filter,
       { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?.userId ?? null, updatedBy: req.user?.userId ?? null, status: 'archived' },
       { new: true }
     ).lean();

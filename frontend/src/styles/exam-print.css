@@ -1,0 +1,395 @@
+/* Examination paper — same font + official header line as academy financial report */
+
+.exam-print-sheet,
+.exam-take-sheet,
+.exam-questions-section {
+  font-family: var(--app-font-family) !important;
+  color: #0f172a;
+}
+
+.exam-print-sheet,
+.exam-print-sheet *,
+.exam-take-sheet,
+.exam-take-sheet *,
+.exam-questions-section,
+.exam-questions-section * {
+  font-family: var(--app-font-family) !important;
+}
+
+.exam-print-sheet {
+  position: relative;
+  background: #ffffff;
+  font-size: 11pt;
+  line-height: 1.45;
+  padding-bottom: 0.75rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.exam-print-header {
+  margin-bottom: 0.45rem;
+}
+
+.exam-print-header-banner {
+  margin-bottom: 0.4rem;
+}
+
+.exam-print-title {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 12pt;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: #0f172a;
+}
+
+.exam-print-section-title {
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+}
+
+.exam-print-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0;
+  padding: 0.3rem 0.45rem;
+  margin-bottom: 0.3rem;
+  font-size: 10pt;
+  background: #ffffff;
+}
+
+.exam-print-meta-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.exam-print-meta-grid span {
+  color: #64748b;
+  font-size: 8.5pt;
+}
+
+.exam-print-meta-grid strong {
+  font-weight: 700;
+  font-size: 10pt;
+  word-break: break-word;
+}
+
+.exam-print-instructions {
+  font-size: 10pt;
+  line-height: 1.35;
+  margin: 0 0 0.3rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+}
+
+.exam-print-student-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 10pt;
+  font-weight: 600;
+  padding: 0.3rem 0 0.1rem;
+  margin-top: 0.15rem;
+  border-top: 1px solid #cbd5e1;
+}
+
+.exam-print-student-field {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.exam-print-blank {
+  border-bottom: 1px solid #0f172a !important;
+}
+
+.exam-print-questions-shell {
+  margin-top: 0.15rem;
+}
+
+.exam-print-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 11pt;
+}
+
+.exam-print-question {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  padding-top: 0.22rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 11pt;
+}
+
+.exam-print-question:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.exam-print-question-text {
+  margin: 0 0 0.15rem;
+  font-weight: 700;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.exam-print-qnum {
+  font-weight: 700;
+}
+
+.exam-print-marks {
+  font-weight: 600;
+  color: #475569;
+  font-size: 10pt;
+}
+
+.exam-print-select-note {
+  margin: 0 0 0.2rem;
+  font-size: 10pt;
+  font-weight: 600;
+  font-style: italic;
+  color: #334155;
+}
+
+.exam-print-group-hint {
+  margin: 0.4rem 0 0.15rem;
+}
+
+.exam-print-options-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  padding-inline-start: 0.15rem;
+  font-size: 11pt;
+}
+
+.exam-print-option-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 11pt;
+  line-height: 1.35;
+  max-width: 100%;
+}
+
+.exam-print-option-key {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.exam-print-option-text {
+  word-break: break-word;
+  font-weight: 400;
+}
+
+.exam-print-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1.4px solid #0f172a;
+  flex-shrink: 0;
+  font-size: 0.55rem;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.exam-print-box.is-correct {
+  background: #dcfce7;
+  border-color: #166534;
+  color: #166534;
+  font-weight: 700;
+}
+
+.exam-print-answer-key {
+  margin: 0.15rem 0 0;
+  font-size: 10pt;
+  color: #166534;
+}
+
+.exam-print-answer-space {
+  margin-top: 0.25rem;
+  border: 1px dashed #94a3b8;
+  min-height: 1.6rem;
+}
+
+.exam-print-answer-space.tall {
+  min-height: 3.6rem;
+}
+
+.exam-print-answer-space.short {
+  min-height: 1.1rem;
+}
+
+.exam-print-empty {
+  font-size: 11pt;
+  color: #64748b;
+}
+
+.exam-print-running-footer {
+  margin-top: 0.65rem;
+  border-top: 1px solid #94a3b8;
+  padding-top: 0.3rem;
+  font-size: 8.5pt;
+  color: #334155;
+}
+
+.exam-print-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exam-print-page-counter::after {
+  content: counter(page) ' / ' counter(pages);
+}
+
+.exam-take-sheet .academy-financial-print-header {
+  border-color: #cbd5e1;
+}
+
+@media screen {
+  .exam-print-sheet {
+    max-width: 210mm;
+    margin-inline: auto;
+  }
+
+  .exam-print-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  #nokta-print-portal .exam-print-sheet,
+  #nokta-print-portal .exam-print-sheet *,
+  #nokta-print-portal .academy-financial-print-sheet,
+  #nokta-print-portal .academy-financial-print-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    font-family: var(--app-font-family) !important;
+  }
+
+  .exam-print-sheet {
+    padding-bottom: 12mm !important;
+    font-size: 11pt !important;
+  }
+
+  .exam-print-header-banner.academy-financial-print-header {
+    padding: 3px 6px !important;
+    margin: 0 0 4px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    min-height: 20mm !important;
+    max-height: 20mm !important;
+    overflow: hidden !important;
+  }
+
+  .exam-print-title {
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    margin: 2px 0 4px !important;
+  }
+
+  .exam-print-section-title {
+    margin: 0 0 4px !important;
+    font-size: 11pt !important;
+  }
+
+  .exam-print-questions-shell.worksheet-print-shell {
+    padding: 4px !important;
+    min-height: 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    display: block !important;
+  }
+
+  .exam-print-meta-grid,
+  .exam-print-meta-grid strong,
+  .exam-print-student-row,
+  .exam-print-instructions,
+  .exam-print-select-note,
+  .exam-print-marks {
+    font-size: 9.5pt !important;
+  }
+
+  .exam-print-meta-grid span {
+    font-size: 8pt !important;
+  }
+
+  .exam-print-questions,
+  .exam-print-question,
+  .exam-print-question-text,
+  .exam-print-options-inline,
+  .exam-print-option-inline {
+    font-size: 11pt !important;
+    font-weight: inherit;
+  }
+
+  .exam-print-question-text,
+  .exam-print-qnum,
+  .exam-print-option-key {
+    font-weight: 700 !important;
+  }
+
+  .exam-print-running-footer {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    padding: 2mm 0 0 !important;
+    background: #ffffff !important;
+    border-top: 1px solid #64748b !important;
+    font-size: 8pt !important;
+    z-index: 9999 !important;
+  }
+
+  .exam-print-header,
+  .exam-print-student-row,
+  .exam-print-instructions,
+  .exam-print-meta-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .exam-print-student-row {
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+  }
+
+  .exam-print-options-inline {
+    flex-wrap: wrap !important;
+    gap: 0.3rem 0.75rem !important;
+  }
+
+  .exam-print-option-inline {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .exam-print-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    border-radius: 0 !important;
+  }
+}

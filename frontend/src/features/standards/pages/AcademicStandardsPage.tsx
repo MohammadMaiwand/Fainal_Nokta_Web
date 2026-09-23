@@ -9,7 +9,6 @@ import {
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
-  CreditCard,
   Database,
   FileText,
   GraduationCap,
@@ -20,6 +19,7 @@ import {
   Target,
   Users
 } from 'lucide-react';
+import { AfghaniIcon } from '@/components/icons/AfghaniIcon';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { dashboardService, type DashboardSummary, type MasterDashboardSummary } from '@/features/dashboard/services/dashboardService';
@@ -104,7 +104,7 @@ const standardDomains: StandardDomain[] = [
     id: 'finance',
     title: 'Finance, Billing and Operations',
     benchmark: 'Payments, expenses, outstanding balances and branch-level operational finance visibility.',
-    icon: CreditCard,
+    icon: AfghaniIcon,
     modules: ['payments', 'finance', 'expenses', 'branches'],
     signals: ['incomeTotal', 'expenseTotal', 'outstandingBalance'],
     actionPath: '/finance',
@@ -186,7 +186,7 @@ export function AcademicStandardsPage() {
   const { isDark } = useTheme();
   const summaryQuery = useQuery({
     queryKey: ['dashboard-summary'],
-    queryFn: dashboardService.summary
+    queryFn: () => dashboardService.summary()
   });
 
   const masterQuery = useQuery({

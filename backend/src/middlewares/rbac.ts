@@ -1,12 +1,16 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createError } from '../helpers/response';
-import { roleMatches } from '../utils/roleHelpers';
+import { normalizeRole, roleMatches } from '../utils/roleHelpers';
 
 export const requireRole = (...allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) {
       return res.status(401).json(createError('Authentication required'));
+    }
+
+    if (normalizeRole(user.role) === 'super_admin') {
+      return next();
     }
 
     if (!roleMatches(user.role, allowedRoles)) {

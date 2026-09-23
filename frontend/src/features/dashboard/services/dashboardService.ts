@@ -1,6 +1,9 @@
 import { api } from '@/services/apiClient';
 
+export type DashboardPeriod = 'day' | 'month' | 'quarter' | 'year';
+
 export interface DashboardSummary {
+  period?: DashboardPeriod;
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
@@ -10,11 +13,27 @@ export interface DashboardSummary {
   totalBooks: number;
   totalAuditLogs: number;
   totalNotifications: number;
+  totalBranches: number;
+  totalAttendance: number;
+  totalExams: number;
+  totalResults: number;
+  totalPayments: number;
+  totalFinanceEntries: number;
+  totalReports: number;
+  totalMessages: number;
   expenseTotal: number;
   incomeTotal: number;
+  paymentIncomeTotal: number;
+  studentFeeAccrualTotal?: number;
+  bookSalesTotal?: number;
   outstandingBalance: number;
-  enrollmentTrend: Array<{ year: number; month: number; students: number; teachers: number }>;
-  monthlyFinances: Array<{ year: number; month: number; income: number; expenses: number }>;
+  totalStudentFees?: number;
+  payrollNetTotal: number;
+  payrollTaxTotal: number;
+  payrollGrossTotal: number;
+  academyNetTotal: number;
+  enrollmentTrend: Array<{ year: number; month: number; day?: number; hour?: number; students: number; teachers: number }>;
+  monthlyFinances: Array<{ year: number; month: number; day?: number; hour?: number; income: number; expenses: number }>;
   expenseCategoryBreakdown: Array<{ category: string; total: number }>;
 }
 
@@ -35,13 +54,18 @@ export interface MasterDashboardSummary {
   notifications: number;
   audit: number;
   roles: number;
+  courses?: number;
+  books?: number;
+  messages?: number;
+  curriculum?: number;
 }
 
 export const dashboardService = {
-  summary: () =>
-    api.get('/dashboard/summary').then((res) => {
+  summary: (period: DashboardPeriod = 'month') =>
+    api.get('/dashboard/summary', { params: { period } }).then((res) => {
       const data = res.data.data ?? {};
       return {
+        period: (data.period as DashboardPeriod) ?? period,
         totalStudents: data.totalStudents ?? 0,
         totalTeachers: data.totalTeachers ?? 0,
         totalClasses: data.totalClasses ?? 0,
@@ -51,12 +75,39 @@ export const dashboardService = {
         totalBooks: data.totalBooks ?? 0,
         totalAuditLogs: data.totalAuditLogs ?? 0,
         totalNotifications: data.totalNotifications ?? 0,
-        expenseTotal: data.expenseTotal ?? 0,
-        incomeTotal: data.incomeTotal ?? 0,
-        outstandingBalance: data.outstandingBalance ?? 0,
+        totalBranches: data.totalBranches ?? 0,
+        totalAttendance: data.totalAttendance ?? 0,
+        totalExams: data.totalExams ?? 0,
+        totalResults: data.totalResults ?? 0,
+        totalPayments: data.totalPayments ?? 0,
+        totalFinanceEntries: data.totalFinanceEntries ?? 0,
+        totalReports: data.totalReports ?? 0,
+        totalMessages: data.totalMessages ?? 0,
+        expenseTotal: Math.round(Number(data.expenseTotal ?? 0)),
+        incomeTotal: Math.round(Number(data.incomeTotal ?? 0)),
+        paymentIncomeTotal: Math.round(Number(data.paymentIncomeTotal ?? data.totalStudentFees ?? 0)),
+        studentFeeAccrualTotal: Math.round(Number(data.studentFeeAccrualTotal ?? data.totalStudentFees ?? 0)),
+        bookSalesTotal: Math.round(Number(data.bookSalesTotal ?? 0)),
+        outstandingBalance: Math.round(Number(data.outstandingBalance ?? 0)),
+        totalStudentFees: Math.round(Number(data.totalStudentFees ?? data.paymentIncomeTotal ?? 0)),
+        payrollNetTotal: Math.round(Number(data.payrollNetTotal ?? 0)),
+        payrollTaxTotal: Math.round(Number(data.payrollTaxTotal ?? 0)),
+        payrollGrossTotal: Math.round(Number(data.payrollGrossTotal ?? 0)),
+        academyNetTotal: Math.round(Number(data.academyNetTotal ?? (Number(data.incomeTotal ?? 0) - Number(data.expenseTotal ?? 0)))),
         enrollmentTrend: Array.isArray(data.enrollmentTrend) ? data.enrollmentTrend : [],
-        monthlyFinances: Array.isArray(data.monthlyFinances) ? data.monthlyFinances : [],
-        expenseCategoryBreakdown: Array.isArray(data.expenseCategoryBreakdown) ? data.expenseCategoryBreakdown : []
+        monthlyFinances: Array.isArray(data.monthlyFinances)
+          ? data.monthlyFinances.map((item: { year: number; month: number; day?: number; hour?: number; income: number; expenses: number }) => ({
+              ...item,
+              income: Math.round(Number(item.income ?? 0)),
+              expenses: Math.round(Number(item.expenses ?? 0))
+            }))
+          : [],
+        expenseCategoryBreakdown: Array.isArray(data.expenseCategoryBreakdown)
+          ? data.expenseCategoryBreakdown.map((item: { category: string; total: number }) => ({
+              category: item.category,
+              total: Math.round(Number(item.total ?? 0))
+            }))
+          : []
       } satisfies DashboardSummary;
     }),
   masterSummary: () =>

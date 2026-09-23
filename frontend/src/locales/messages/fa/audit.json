@@ -1,6 +1,15 @@
 {
-  "actor": "کاربر",
+  "actor": "استفاده کننده",
   "action": "اقدام",
   "target": "هدف",
-  "created_at": "تاریخ"
+  "created_at": "تاریخ",
+  "severity_info": "اطلاع",
+  "severity_warning": "هشدار",
+  "severity_critical": "بحرانی",
+  "type_authentication": "احراز هویت",
+  "type_finance": "مالی",
+  "type_attendance": "حاضری",
+  "type_rbac": "صلاحیت‌ها",
+  "type_reporting": "گزارش",
+  "type_system": "سیستم"
 }

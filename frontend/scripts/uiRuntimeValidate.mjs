@@ -89,10 +89,16 @@ const routeChecks = [
   '/profile',
   '/analytics',
   '/ecommerce',
-  '/settings'
+  '/settings',
+  '/messages'
 ];
 
-const publicRoutes = ['/home', '/login', '/forbidden', '/missing-route'];
+const publicRoutes = ['/home', '/login', '/register', '/forbidden', '/missing-route'];
+const publicApiChecks = [
+  '/health',
+  '/api/courses/public/home',
+  '/api/classes/public/home'
+];
 const sessionCache = new Map();
 const authTimestamps = [];
 
@@ -560,6 +566,41 @@ async function verifyLanguageSwitch(cdp, route, languageCode, expectedLang, expe
   };
 }
 
+async function runApiSmoke(report) {
+  for (const path of publicApiChecks) {
+    const url = path.startsWith('/api') ? `${BACKEND_URL}${path}` : `${BACKEND_URL}${path}`;
+    try {
+      const response = await fetch(url);
+      report.apiChecks.push({ path, status: response.status, ok: response.ok });
+    } catch (error) {
+      report.apiChecks.push({ path, status: null, ok: false, error: String(error) });
+    }
+  }
+
+  try {
+    const studentSession = await loginApi('student');
+    const studentFinance = await fetch(`${BACKEND_URL}/api/finance/summary`, {
+      headers: { Authorization: `Bearer ${studentSession.token}` }
+    });
+    report.apiChecks.push({
+      path: '/api/finance/summary as student',
+      status: studentFinance.status,
+      ok: studentFinance.status === 403
+    });
+
+    const studentAdminMessages = await fetch(`${BACKEND_URL}/api/messages/admin/inbox`, {
+      headers: { Authorization: `Bearer ${studentSession.token}` }
+    });
+    report.apiChecks.push({
+      path: '/api/messages/admin/inbox as student',
+      status: studentAdminMessages.status,
+      ok: studentAdminMessages.status === 403
+    });
+  } catch (error) {
+    report.apiChecks.push({ path: 'student-rbac-smoke', status: null, ok: false, error: String(error) });
+  }
+}
+
 async function run() {
   const { browser, cdp } = await launchBrowser();
   const issues = createIssueTracker(cdp);
@@ -571,12 +612,15 @@ async function run() {
       browserPath: BROWSER_PATH,
       screenshots: [],
       publicRoutes: [],
+      apiChecks: [],
       protectedRoutes: {},
       dashboards: {},
       translations: [],
       routeChecks: [],
       issues
     };
+
+    await runApiSmoke(report);
 
     for (const route of publicRoutes) {
       await navigate(cdp, `${FRONTEND_URL}${route}`);

@@ -68,7 +68,11 @@ async function resolveStudentAndTeacher(req: any, body: Record<string, any>) {
     .lean<any>();
   if (!student) throw new Error('Student account was not found');
 
-  const teacherId = body.teacherId || student.assignedTeacherId;
+  // شاگرد فقط می‌تواند به استاد تعیین‌شده پیام بدهد (teacherId آزاد از بدنه پذیرفته نمی‌شود)
+  const teacherId =
+    role === 'student' || role === 'family_student'
+      ? student.assignedTeacherId
+      : body.teacherId || student.assignedTeacherId;
   const teacher = await User.findOne({ _id: teacherId, role: 'teacher', isDeleted: false })
     .select('name email phone whatsapp')
     .lean<any>();

@@ -12,10 +12,26 @@ export interface PermissionPrincipal {
 }
 
 export class PermissionService {
+  private normalizePathname(pathname: string) {
+    return pathname.split('?')[0];
+  }
+
   getRoutePolicy(pathname: string, method: string) {
+    const normalizedPath = this.normalizePathname(pathname);
     const normalizedMethod = method.toUpperCase();
-    return enterpriseRoutePolicies.find((policy) => {
-      if (!pathname.startsWith(policy.prefix)) {
+    const matches = enterpriseRoutePolicies.filter((policy) => {
+      if (!normalizedPath.startsWith(policy.prefix)) {
+        return false;
+      }
+
+      if (policy.exact) {
+        const remainder = normalizedPath.slice(policy.prefix.length);
+        if (remainder.length > 0 && remainder !== '/') {
+          return false;
+        }
+      }
+
+      if (policy.pathSuffix && !normalizedPath.includes(policy.pathSuffix)) {
         return false;
       }
 
@@ -25,6 +41,12 @@ export class PermissionService {
 
       return policy.methods.map((item) => item.toUpperCase()).includes(normalizedMethod);
     });
+
+    if (!matches.length) {
+      return undefined;
+    }
+
+    return matches.sort((left, right) => right.prefix.length - left.prefix.length)[0];
   }
 
   isPublicRoute(pathname: string, method: string) {

@@ -1,60 +1,70 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Bell,
-  BookOpen,
-  Building2,
-  CalendarCheck,
-  ClipboardList,
-  CreditCard,
-  DollarSign,
-  FileText,
-  GraduationCap,
-  Layers,
-  Receipt,
-  ShieldCheck,
-  UserCheck,
-  Users
+  Bell, BookOpen, Building2, CalendarCheck, ClipboardList,
+  FileText, GraduationCap, Layers, MessageSquare, ShieldCheck, UserCheck, Users
 } from 'lucide-react';
+import { AfghaniIcon } from '@/components/icons/AfghaniIcon';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
+import { ModuleControlCard } from '@/features/dashboard/components/ModuleControlCard';
 import { dashboardService } from '@/features/dashboard/services/dashboardService';
+import { useAuthStore } from '@/store/authStore';
+import { userCanOpenPath } from '@/features/resources/config/modules';
 
 const moduleCards = [
-  { key: 'users', label: 'Users', path: '/users', icon: Users, accent: 'from-sky-500/30 to-sky-200/10' },
-  { key: 'students', label: 'Students', path: '/students', icon: GraduationCap, accent: 'from-blue-500/30 to-blue-200/10' },
-  { key: 'teachers', label: 'Teachers', path: '/teachers', icon: UserCheck, accent: 'from-emerald-500/30 to-emerald-200/10' },
-  { key: 'classes', label: 'Classes', path: '/classes', icon: Layers, accent: 'from-violet-500/30 to-violet-200/10' },
-  { key: 'subjects', label: 'Subjects', path: '/subjects', icon: BookOpen, accent: 'from-amber-500/30 to-amber-200/10' },
-  { key: 'attendance', label: 'Attendance', path: '/attendance', icon: ClipboardList, accent: 'from-cyan-500/30 to-cyan-200/10' },
-  { key: 'exams', label: 'Exams', path: '/exams', icon: CalendarCheck, accent: 'from-yellow-500/30 to-yellow-200/10' },
-  { key: 'results', label: 'Results', path: '/results', icon: FileText, accent: 'from-indigo-500/30 to-indigo-200/10' },
-  { key: 'payments', label: 'Payments', path: '/payments', icon: Receipt, accent: 'from-green-500/30 to-green-200/10' },
-  { key: 'finance', label: 'Finance', path: '/finance', icon: DollarSign, accent: 'from-teal-500/30 to-teal-200/10' },
-  { key: 'expenses', label: 'Expenses', path: '/expenses', icon: CreditCard, accent: 'from-rose-500/30 to-rose-200/10' },
-  { key: 'reports', label: 'Reports', path: '/reports', icon: FileText, accent: 'from-fuchsia-500/30 to-fuchsia-200/10' },
-  { key: 'branches', label: 'Branches', path: '/branches', icon: Building2, accent: 'from-orange-500/30 to-orange-200/10' },
-  { key: 'notifications', label: 'Notifications', path: '/notifications', icon: Bell, accent: 'from-slate-400/30 to-slate-100/10' },
-  { key: 'audit', label: 'Audit', path: '/audit', icon: ShieldCheck, accent: 'from-lime-500/30 to-lime-200/10' },
-  { key: 'roles', label: 'Roles', path: '/roles', icon: ShieldCheck, accent: 'from-red-500/30 to-red-200/10' }
+  { key: 'branches', labelKey: 'common.branches', path: '/branches', icon: Building2, iconClassName: 'text-orange-400' },
+  { key: 'users', labelKey: 'common.users', path: '/users', icon: Users, iconClassName: 'text-emerald-400' },
+  { key: 'students', labelKey: 'common.students', path: '/students', icon: GraduationCap, iconClassName: 'text-blue-400' },
+  { key: 'teachers', labelKey: 'common.teachers', path: '/teachers', icon: UserCheck, iconClassName: 'text-green-400' },
+  { key: 'classes', labelKey: 'common.classes', path: '/classes', icon: Layers, iconClassName: 'text-purple-400' },
+  { key: 'courses', labelKey: 'common.courses', path: '/courses', icon: BookOpen, iconClassName: 'text-cyan-400' },
+  { key: 'subjects', labelKey: 'common.subjects', path: '/subjects', icon: BookOpen, iconClassName: 'text-amber-400' },
+  { key: 'attendance', labelKey: 'common.attendance', path: '/attendance', icon: ClipboardList, iconClassName: 'text-sky-400' },
+  { key: 'exams', labelKey: 'common.exams', path: '/exams', icon: CalendarCheck, iconClassName: 'text-yellow-400' },
+  { key: 'results', labelKey: 'common.results', path: '/results', icon: FileText, iconClassName: 'text-indigo-400' },
+  { key: 'books', labelKey: 'common.books', path: '/books', icon: BookOpen, iconClassName: 'text-teal-400' },
+  { key: 'messages', labelKey: 'messages.title', path: '/messages', icon: MessageSquare, iconClassName: 'text-fuchsia-400' },
+  { key: 'notifications', labelKey: 'common.notifications', path: '/notifications', icon: Bell, iconClassName: 'text-slate-500 dark:text-slate-300' },
+  { key: 'curriculum', labelKey: 'common.curriculum', path: '/curriculum', icon: BookOpen, iconClassName: 'text-rose-400' },
+  { key: 'audit', labelKey: 'common.audit_logs', path: '/audit', icon: ShieldCheck, iconClassName: 'text-lime-400' },
+  { key: 'roles', labelKey: 'common.roles', path: '/roles', icon: ShieldCheck, iconClassName: 'text-red-400' },
+  { key: 'payments', labelKey: 'common.payments', path: '/payments', icon: AfghaniIcon, iconClassName: 'text-green-400' },
+  { key: 'finance', labelKey: 'common.finance', path: '/finance', icon: AfghaniIcon, iconClassName: 'text-emerald-400' },
+  { key: 'expenses', labelKey: 'common.expenses', path: '/expenses', icon: AfghaniIcon, iconClassName: 'text-rose-400' },
+  { key: 'reports', labelKey: 'common.reports', path: '/reports', icon: FileText, iconClassName: 'text-violet-400' },
+  { key: 'payroll', labelKey: 'common.payroll_tax', path: '/payroll', icon: AfghaniIcon, iconClassName: 'text-amber-400' },
+  { key: 'academyFinancialReport', labelKey: 'common.academy_financial_report', path: '/academy-financial-report', icon: AfghaniIcon, iconClassName: 'text-teal-400' },
+  { key: 'timetable', labelKey: 'common.timetable', path: '/timetable', icon: CalendarCheck, iconClassName: 'text-cyan-400' },
+  { key: 'families', labelKey: 'common.families', path: '/families', icon: Users, iconClassName: 'text-pink-400' }
 ] as const;
 
 export function SuperAdminMasterDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-master-summary'],
     queryFn: dashboardService.masterSummary
   });
+
+  const openSection = (path: string, intent?: 'edit' | 'delete' | 'create') => {
+    if (!intent) {
+      navigate(path);
+      return;
+    }
+    navigate(path, { state: { preferCardView: true, dashboardIntent: intent } });
+  };
 
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 16 }).map((_, index) => (
           <Card key={index} className="min-h-[180px] animate-pulse p-6">
-            <div className="h-10 w-10 rounded-2xl bg-slate-700" />
-            <div className="mt-6 h-5 w-32 rounded bg-slate-700" />
-            <div className="mt-3 h-10 w-20 rounded bg-slate-800" />
+            <div className="h-10 w-10 rounded-2xl bg-slate-200 dark:bg-slate-700" />
+            <div className="mt-6 h-5 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="mt-3 h-10 w-20 rounded bg-slate-100 dark:bg-slate-800" />
           </Card>
         ))}
       </div>
@@ -63,26 +73,35 @@ export function SuperAdminMasterDashboard() {
 
   if (isError || !data) {
     return (
-      <Card className="p-6 text-rose-200">
-        {t('errors.unable_load_records', { defaultValue: 'Unable to load records' })}
+      <Card className="p-6 text-rose-600 dark:text-rose-200">
+        {t('errors.unable_load_records')}
       </Card>
     );
   }
 
   return (
     <div className="space-y-8">
-      <div className="rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.14),transparent_32%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(30,41,59,0.92))] p-8 shadow-[0_30px_120px_rgba(15,23,42,0.35)]">
-        <p className="text-sm uppercase tracking-[0.35em] text-sky-300">Super Admin Master Dashboard</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white">Module Control Center</h1>
-        <p className="mt-3 max-w-3xl text-slate-300">
-          One premium overview for every system module, with equal-sized entry cards and direct access to operational pages.
+      <div className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-8 shadow-lg dark:border-white/10 dark:bg-slate-950/80">
+        <p className="text-sm uppercase tracking-[0.35em] text-sky-600 dark:text-sky-300">
+          {t('dashboard.super_admin_dashboard')}
         </p>
+        <h1 className="mt-4 text-4xl font-semibold text-slate-900 dark:text-white">
+          {t('dashboard.master_control_center', { defaultValue: 'Module Control Center' })}
+        </h1>
+        <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+          {t('dashboard.master_control_description', { defaultValue: 'Manage every module with create, edit, and soft-delete controls.' })}
+        </p>
+        <Link
+          to="/dashboard"
+          className="mt-5 inline-flex rounded-full border border-sky-400/30 bg-sky-500/10 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-500/20 dark:text-sky-100"
+        >
+          {t('common.dashboard')}
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {moduleCards.map((item, index) => {
-          const Icon = item.icon;
-          const count = data[item.key as keyof typeof data] ?? 0;
+        {moduleCards.filter((item) => userCanOpenPath(user, item.path)).map((item, index) => {
+          const count = data[item.key as keyof typeof data];
 
           return (
             <motion.div
@@ -91,22 +110,14 @@ export function SuperAdminMasterDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.24, delay: index * 0.02 }}
             >
-              <Link to={item.path} className="block h-full">
-                <Card className={`group flex h-full min-h-[180px] flex-col justify-between overflow-hidden border border-white/10 bg-gradient-to-br ${item.accent} p-6 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_60px_rgba(15,23,42,0.25)]`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white">
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-slate-200">
-                      Open
-                    </span>
-                  </div>
-                  <div className="mt-8">
-                    <div className="text-sm uppercase tracking-[0.25em] text-slate-300">{item.label}</div>
-                    <div className="mt-3 text-4xl font-semibold text-white">{Number(count).toLocaleString()}</div>
-                  </div>
-                </Card>
-              </Link>
+              <ModuleControlCard
+                labelKey={item.labelKey}
+                path={item.path}
+                icon={item.icon}
+                iconClassName={item.iconClassName}
+                value={typeof count === 'number' ? count : undefined}
+                onOpen={openSection}
+              />
             </motion.div>
           );
         })}

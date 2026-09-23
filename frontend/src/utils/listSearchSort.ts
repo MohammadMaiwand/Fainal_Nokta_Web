@@ -1,3 +1,5 @@
+import { formatIsoToJalaliInput } from './jalaliDateInput';
+
 export type ListSortField = 'name' | 'date' | 'role';
 export type ListSortDirection = 'asc' | 'desc';
 
@@ -22,6 +24,16 @@ function toSearchTokens(value: unknown, tokens: string[], visited: WeakSet<objec
 
   if (value instanceof Date) {
     tokens.push(value.toISOString().toLowerCase());
+    const jalali = formatIsoToJalaliInput(value);
+    if (jalali) tokens.push(jalali.toLowerCase());
+    return;
+  }
+
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value.trim())) {
+    const normalized = value.trim().toLowerCase();
+    tokens.push(normalized);
+    const jalali = formatIsoToJalaliInput(value);
+    if (jalali) tokens.push(jalali.toLowerCase());
     return;
   }
 

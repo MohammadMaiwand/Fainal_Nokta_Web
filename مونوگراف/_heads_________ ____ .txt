@@ -1,0 +1,14 @@
+[Heading 1] CHAPTER1: INTRODUCTION
+[Heading 1] 1.1 Background
+[Heading 1] 1.2 Problem Statement
+[Heading 1] 1.4 Scope and Limitations
+[Heading 1] 1.4.1 Scope (Inclusions)
+[Heading 1] 1.4.2 Limitations (Exclusions)
+[Heading 1] 1.6 Organization of the Report
+[Normal] Chapter 2 reviews the relevant literature on academic management systems, learning analytics, and related technologies. It defines key concepts, compares existing systems, examines recent trends, and identifies the research gaps that the  (NAMS) aims to address.
+[Normal] Chapter 3 presents the requirements analysis of the project. It describes how requirements were collected from academy stakeholders, specifies functional and non-functional requirements, introduces the use case model, and defines the data requirements for the system.
+[Normal] Chapter 4 documents the system design. It explains the selected design methodology and presents the system architecture, database schema, user interface design considerations, security mechanisms, and the testing strategy prepared for implementation.
+[Normal] Chapter 5 covers implementation and testing. It outlines the development environment, describes the main implementation phases, presents selected code modules, and reports the results of unit, integration, and user acceptance testing, along with the challenges encountered during development.
+[Normal] Chapter 6 discusses the project results. It presents the system outputs through screenshots, evaluates performance against the defined non-functional requirements, compares NAMS with related systems, and interprets the findings in relation to the project objectives.
+[Normal] Chapter 7 concludes the report. It summarizes the work completed, highlights the main contributions, evaluates the extent to which each objective was achieved, and suggests directions for future improvements of the system.
+[Heading 1] CHAPTER 2: LITERATURE REVIEW

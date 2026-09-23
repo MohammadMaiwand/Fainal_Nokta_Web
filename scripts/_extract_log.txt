@@ -1,0 +1,60 @@
+﻿MONO_OK True
+MONO_PATH F:\\Bcak_End_update_file-main\\Nokta_V7 - Copy\\\u0645\u0648\u0646\u0648\u06af\u0631\u0627\u0641
+pages 139
+headings 26
+p11: TABLE OF CONTENTS
+p11: CHAPTER 1:
+p11: 1.10 Organization of the Report . . . . . . . . . . . . . . . . . . .
+p11: CHAPTER 2:
+p12: CHAPTER 3:
+p13: CHAPTER 4:
+p13: CHAPTER 5:
+p13: CHAPTER 6:
+p13: REFERENCES
+p13: APPENDIX A:
+p14: APPENDIX B:
+p14: APPENDIX C:
+p14: APPENDIX D:
+p19: CHAPTER 1: INTRODUCTION
+p31: CHAPTER 2: LITERATURE REVIEW
+p45: CHAPTER 3: METHODOLOGY
+p48: 0.0025 = 384.16
+p48: 1.0547 Γëê364.2
+p105: CHAPTER 4: RESULTS
+p115: CHAPTER 5: DISCUSSION
+p121: CHAPTER 6: CONCLUSION AND FUTURE WORK
+p123: Chapter 4 results
+p131: APPENDIX A: QUESTIONNAIRES
+p135: APPENDIX B: SOURCE CODE REPOSITORY
+p137: APPENDIX C: RAW TEST DATA
+p139: APPENDIX D: USER MANUAL
+
+DOCX FILES:
+ - Last.docx 1709305
+ - Last_Mono_Expanded.docx 724631
+ - Nokta_Academy_Management_System_Monograph_EN_APA_REAL.docx 968351
+ - \u0645\u0648\u0646\u0648\u06af\u0631\u0627\u0641 \u0627\u062e\u06cc\u0631.docx 630116
+ - \u0645\u0648\u0646\u0648\u06af\u0631\u0627\u0641 \u0627\u0635\u0644\u06cc .docx 157465
+MAIN WORD ~$\u0646\u0648\u06af\u0631\u0627\u0641 \u0627\u0635\u0644\u06cc .docx
+py : Traceback (most recent call last):
+At C:\Users\Maihan\AppData\Local\Temp\ps-script-cf4ab1c1-6fe0-4a79-8f96-983654017019.ps1:110 char:32
++ ... NG='utf-8'; py "F:\Bcak_End_update_file-main\Nokta_V7 - Copy\scripts\ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "F:\Bcak_End_update_file-main\Nokta_V7 - Copy\scripts\_extract_exit_structure.py", line 71, in <module>
+    w = Document(str(main))
+  File "C:\Users\Maihan\AppData\Local\Programs\Python\Python38-32\lib\site-packages\docx\api.py", line 27, in Document
+    document_part = cast("DocumentPart", Package.open(docx).main_document_part)
+  File "C:\Users\Maihan\AppData\Local\Programs\Python\Python38-32\lib\site-packages\docx\opc\package.py", line 127, in 
+open
+    pkg_reader = PackageReader.from_file(pkg_file)
+  File "C:\Users\Maihan\AppData\Local\Programs\Python\Python38-32\lib\site-packages\docx\opc\pkgreader.py", line 22, 
+in from_file
+    phys_reader = PhysPkgReader(pkg_file)
+  File "C:\Users\Maihan\AppData\Local\Programs\Python\Python38-32\lib\site-packages\docx\opc\phys_pkg.py", line 21, in 
+__new__
+    raise PackageNotFoundError("Package not found at '%s'" % pkg_file)
+docx.opc.exceptions.PackageNotFoundError: Package not found at 'F:\Bcak_End_update_file-main\Nokta_V7 - 
+Copy\┘à┘ê┘å┘ê┌»╪▒╪º┘ü\~$┘å┘ê┌»╪▒╪º┘ü ╪º╪╡┘ä█î .docx'

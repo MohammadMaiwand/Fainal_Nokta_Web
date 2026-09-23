@@ -1,0 +1,12 @@
+{
+  "manage_portal_account": "Manage login / access",
+  "portal_updated": "Family account updated successfully.",
+  "portal_update_failed": "Could not update the family account.",
+  "password_required_create": "Password is required to create a family login.",
+  "password_min": "Password must be at least 6 characters.",
+  "password_optional_hint": "Leave blank to keep the current password",
+  "sections_required": "Select at least one accessible section.",
+  "portal_sections": "Accessible sections",
+  "portal_sections_hint": "Only checked sections appear in the family sidebar.",
+  "no_portal_account": "No login account yet"
+}

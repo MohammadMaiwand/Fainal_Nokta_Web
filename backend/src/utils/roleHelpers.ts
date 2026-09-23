@@ -31,7 +31,7 @@ const legacyModuleMap: Record<string, string> = {
   result: 'RESULT',
   payments: 'PAYMENT',
   payment: 'PAYMENT',
-  finance: 'PAYMENT',
+  finance: 'FINANCE',
   expenses: 'EXPENSE',
   expense: 'EXPENSE',
   families: 'FAMILY_LINK',

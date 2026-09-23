@@ -27,7 +27,7 @@ export function ThemeToggle({ compact = true, className = '' }: ThemeToggleProps
       variant="secondary"
       size="sm"
       onClick={toggleTheme}
-      className={`theme-toggle px-3 py-2 ${compact ? 'gap-0' : 'gap-2'} ${className}`.trim()}
+      className={`theme-toggle theme-control-button px-3 py-2 ${compact ? 'gap-0' : 'gap-2'} ${className}`.trim()}
       aria-label={actionLabel}
       title={actionLabel}
     >

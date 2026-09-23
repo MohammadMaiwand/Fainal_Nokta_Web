@@ -12,6 +12,7 @@ import { createResponse, createError } from '../../helpers/response';
 const router = Router();
 
 const manageRoles = ['super_admin', 'admin', 'teacher', 'accountant', 'librarian', 'branch_manager', 'owner'] as const;
+const deleteRoles = ['super_admin', 'admin', 'accountant', 'librarian', 'branch_manager', 'owner'] as const;
 const readRoles = ['super_admin', 'admin', 'teacher', 'student', 'parent', 'owner', 'branch_manager', 'system_automation', 'family_student', 'accountant', 'librarian'] as const;
 const roleSchema = Joi.string().valid(...readRoles);
 
@@ -370,6 +371,38 @@ router.get('/unread-count', authorize([...readRoles]), async (req, res, next) =>
   }
 });
 
+router.post('/:id/read', authorize([...readRoles]), validate(idParamsSchema), async (req, res, next) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json(createError('Authentication required'));
+    }
+
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      isDeleted: false,
+      ...buildAudienceFilter(req, true)
+    });
+
+    if (!notification) {
+      return res.status(404).json(createError('Notification not found'));
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(req.user.userId);
+    const alreadyRead = (notification.readBy || []).some((id: mongoose.Types.ObjectId) => String(id) === String(userObjectId));
+    if (!alreadyRead) {
+      notification.readBy = [...(notification.readBy || []), userObjectId];
+      await notification.save();
+    }
+
+    res.json(createResponse({
+      _id: notification._id,
+      read: true
+    }, 'Notification marked as read'));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/', authorize([...readRoles]), validate(notificationQuerySchema), async (req, res, next) => {
   try {
     const page = Number(req.query.page || 1);
@@ -458,7 +491,7 @@ const updateNotificationHandler = async (req: Request, res: Response, next: any)
 router.put('/:id', authorize([...manageRoles]), validate(idParamsSchema), updateNotificationHandler);
 router.patch('/:id', authorize([...manageRoles]), validate(idParamsSchema), updateNotificationHandler);
 
-router.delete('/:id', authorize([...manageRoles]), validate(idParamsSchema), async (req, res, next) => {
+router.delete('/:id', authorize([...deleteRoles]), validate(idParamsSchema), async (req, res, next) => {
   try {
     const deletedAt = new Date();
     const notification = await Notification.findOneAndUpdate(

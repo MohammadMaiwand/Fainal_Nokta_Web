@@ -2,6 +2,7 @@ import { Settings, ShieldCheck, UserCircle2, BadgeCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/authStore';
+import { IntelligenceSettingsCard } from '@/features/dashboard/components/IntelligenceSettingsCard';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -80,6 +81,8 @@ export function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      <IntelligenceSettingsCard />
     </div>
   );
 }

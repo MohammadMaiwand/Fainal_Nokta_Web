@@ -1,0 +1,3 @@
+tags:
+  live:
+    skip: "Requires LIVE_BACKEND_TESTS=true and a running backend API"

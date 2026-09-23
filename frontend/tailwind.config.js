@@ -4,7 +4,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Segoe UI Variable"', '"Segoe UI"', '"Trebuchet MS"', 'sans-serif'],
+        sans: ['var(--app-font-family)', 'Arial', 'sans-serif'],
+        rtl: ['Vazirmatn', 'Tahoma', 'Arial', 'sans-serif'],
+        english: ['Inter', 'Arial', 'sans-serif'],
       },
       colors: {
         primary: '#4f46e5',
@@ -13,7 +15,7 @@ module.exports = {
         danger: '#ef4444',
         error: '#fb7185',
         warning: '#f59e0b',
-        background: '#0f172a',
+        background: 'var(--color-background)',
         surface: 'rgba(255,255,255,0.05)',
         surfaceAlt: 'rgba(255,255,255,0.08)',
         panel: 'rgba(255,255,255,0.06)',

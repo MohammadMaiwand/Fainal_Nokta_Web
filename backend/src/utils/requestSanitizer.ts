@@ -1,11 +1,9 @@
+import { sanitizePlainText } from './inputSecurity';
+
 const mongoOperatorPattern = /^\$/;
 
 function sanitizeString(value: string) {
-  return value
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/[<>]/g, '')
-    .replace(/\u0000/g, '')
-    .trim();
+  return sanitizePlainText(value);
 }
 
 export function sanitizePayload<T>(value: T): T {

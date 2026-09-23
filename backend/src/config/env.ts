@@ -37,6 +37,15 @@ export const config = {
   defaultBranchCode: process.env.DEFAULT_BRANCH_CODE ?? 'HQ',
   csrfHeaderName: process.env.CSRF_HEADER_NAME ?? 'x-csrf-token',
   csrfSecret: requireProductionSecret('CSRF_SECRET', 'development-csrf-secret-change-before-production'),
+  csrfCookieName: process.env.CSRF_COOKIE_NAME ?? 'csrf_token',
+  csrfAllowLegacySecret: process.env.CSRF_ALLOW_LEGACY_SECRET !== 'false',
   bodyLimit: process.env.BODY_LIMIT ?? '10mb',
-  environment
+  environment,
+  paymentProvider: (process.env.PAYMENT_PROVIDER ?? 'manual') as 'manual' | 'stripe',
+  paymentMode: (process.env.PAYMENT_MODE ?? 'sandbox') as 'sandbox' | 'live',
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+  aiProviderEnabled: process.env.AI_PROVIDER_ENABLED === 'true',
+  aiProviderApiKey: process.env.AI_PROVIDER_API_KEY ?? '',
+  aiAllowSensitiveExternal: process.env.AI_ALLOW_SENSITIVE_EXTERNAL === 'true'
 };

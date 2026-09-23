@@ -1,0 +1,74 @@
+﻿paras 754
+tables 13
+heads 68
+---
+[Heading 1] CHAPTER1: INTRODUCTION
+[Heading 1] 1.1 Background
+[Heading 1] 1.2 Problem Statement
+[Heading 1] 1.4 Scope and Limitations
+[Heading 1] 1.4.1 Scope (Inclusions)
+[Heading 1] 1.4.2 Limitations (Exclusions)
+[Heading 1] 1.6 Organization of the Report
+[Heading 1] CHAPTER 2: LITERATURE REVIEW
+[Heading 1] CHAPTER 3: METHODOLOGY
+[Heading 2] 3.1 Research Methodology
+[Heading 3] 3.1.1 Requirements Elicitation
+[Heading 3] 3.1.2 Population and Sampling
+[Heading 3] 3.1.3 Data Collection
+[Heading 3] 3.1.4 Data Analysis and Presentation
+[Heading 3] 3.1.5 Functional Requirements
+[Heading 3] 3.1.6 Non-Functional Requirements
+[Heading 3] 3.1.7 Data Requirements
+[Heading 2] 3.2 Development Methodology
+[Heading 3] 3.2.1 Agile Development Approach
+[Heading 3] 3.2.2 Scrum-Based Project Organization
+[Heading 3] 3.2.3 Development Iterations
+[Heading 3] 3.2.4 Prototype Development and User Review
+[Heading 3] 3.2.4.1 Prototype 1 ΓÇö Core Integrated Baseline
+[Heading 3] 3.2.4.2 Prototype 2 ΓÇö Survey-Driven Academic and Parent Enhancements
+[Heading 3] 3.2.4.3 Prototype 3 ΓÇö Government Tax Reporting (Quarterly and Annual)
+[Heading 2] 3.3 System Design
+[Heading 3] 3.3.1 Use Case Model
+[Heading 3] 3.3.2 Sequence Diagrams
+[Heading 3] 3.3.3 Architectural Design
+[Heading 3] 3.3.4 Database Design
+[Heading 2] 3.4 Implementation
+[Heading 3] 3.4.1 Development Environment
+[Heading 3] 3.4.2 Implementation Phases
+[Heading 3] 3.4.3 Key Modules Implemented
+[Heading 3] 3.4.4 Challenges and Solutions
+[Heading 2] 3.5 Testing
+[Heading 3] 3.5.1 Unit Testing
+[Heading 3] 3.5.2 Integration Testing
+[Heading 3] 3.5.3 User Acceptance Testing
+[Heading 1] CHAPTER 4: RESULTS
+[Heading 2] 4.1 Questionnaire Results
+[Heading 3] 4.1.1 Respondent Profile
+[Heading 3] 4.1.2 Current Preparation and Access
+[Heading 3] 4.1.3 Feature Interest and Priorities
+[Heading 3] 4.1.4 Perceived Impact
+[Heading 3] 4.1.5 Summary of Findings
+[Heading 1] CHAPTER 5: DISCUSSION
+[Heading 2] 5.1 Main Findings
+[Heading 2] 5.2 Relation to Objectives and Research Questions
+[Heading 2] 5.3 Relation to Literature and Existing Systems
+[Heading 2] 5.4 Practical Implications of NAMS
+[Heading 2] 5.5 Limitations of the Findings and System
+[Heading 1] CHAPTER 6: CONCLUSION AND FUTURE WORK
+[Heading 2] 6.1 Summary of Work Done
+[Heading 2] 6.2 Key Contributions
+[Heading 2] 6.3 Achievement of Objectives
+[Heading 2] 6.4 Future Enhancements
+[Heading 1] REFERENCES
+[Heading 1] APPENDIX A: QUESTIONNAIRES
+[Heading 2] A.1 Requirements Elicitation Questionnaire
+[Heading 1] APPENDIX B: SOURCE CODE REPOSITORY
+[Heading 1] APPENDIX C: RAW TEST DATA
+[Heading 1] APPENDIX D: USER MANUAL
+[Heading 2] D.1 Administrator
+[Heading 2] D.2 Teacher
+[Heading 2] D.3 Student
+[Heading 2] D.4 Parent
+[Heading 2] D.5 Owner / Super Admin
+images 28
+file_ok 2025268

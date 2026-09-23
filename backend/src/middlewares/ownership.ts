@@ -1,12 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createError } from '../helpers/response';
 import { PermissionService } from '../services/permissionService';
+import { ownershipService } from '../services/ownershipService';
 
 const permissionService = new PermissionService();
 
-export function ownershipMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function ownershipMiddleware(req: Request, res: Response, next: NextFunction) {
   const policy = permissionService.getRoutePolicy(req.originalUrl, req.method);
-  if (!policy?.ownership || ['governance', 'branch', 'assigned_or_branch'].includes(policy.ownership)) {
+  if (!policy?.ownership) {
     return next();
   }
 
@@ -14,14 +15,14 @@ export function ownershipMiddleware(req: Request, res: Response, next: NextFunct
     return res.status(401).json(createError('Authentication required'));
   }
 
-  if (['super_admin', 'admin', 'owner', 'branch_manager', 'system_automation'].includes(req.user.canonicalRole ?? '')) {
-    return next();
-  }
+  try {
+    const allowed = await ownershipService.verifyRouteOwnership(req, policy);
+    if (!allowed) {
+      return res.status(403).json(createError('Ownership check failed'));
+    }
 
-  const selfId = req.params.id || req.query.userId || req.body?.userId || req.body?.studentId || req.body?.teacherId;
-  if (policy.ownership === 'self' && selfId && selfId.toString() !== req.user.userId) {
+    return next();
+  } catch {
     return res.status(403).json(createError('Ownership check failed'));
   }
-
-  next();
 }

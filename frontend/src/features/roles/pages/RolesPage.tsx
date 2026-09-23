@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { PageHeader, DataTable, FormModal } from '@/shared/components/Common';
 import { rolesService, type RoleRecord } from '@/features/roles/services/rolesService';
+import { useTheme } from '@/app/providers/ThemeProvider';
 
 type RoleDraft = {
   slug: string;
@@ -16,19 +18,27 @@ type RoleDraft = {
   permissionKeys: string[];
 };
 
-const scopeOptions = [
-  { value: 'global', label: 'Global' },
-  { value: 'operational', label: 'Operational' },
-  { value: 'instructional', label: 'Instructional' },
-  { value: 'self', label: 'Self' },
-  { value: 'linked-family', label: 'Linked Family' },
-  { value: 'governance', label: 'Governance' },
-  { value: 'branch', label: 'Branch' },
-  { value: 'service', label: 'Service' }
-];
-
 export function RolesPage() {
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
   const queryClient = useQueryClient();
+  const panelClass = isDark ? 'bg-slate-950/70 text-slate-100' : 'bg-slate-50 text-slate-900';
+  const mutedClass = isDark ? 'text-slate-400' : 'text-slate-600';
+  const titleClass = isDark ? 'text-white' : 'text-slate-900';
+
+  const scopeOptions = useMemo(
+    () => [
+      { value: 'global', label: t('roles.scope_global') },
+      { value: 'operational', label: t('roles.scope_operational') },
+      { value: 'instructional', label: t('roles.scope_instructional') },
+      { value: 'self', label: t('roles.scope_self') },
+      { value: 'linked-family', label: t('roles.scope_linked_family') },
+      { value: 'governance', label: t('roles.scope_governance') },
+      { value: 'branch', label: t('roles.scope_branch') },
+      { value: 'service', label: t('roles.scope_service') }
+    ],
+    [t]
+  );
   const [editingRole, setEditingRole] = useState<RoleRecord | null>(null);
   const [draft, setDraft] = useState<RoleDraft | null>(null);
   const [formError, setFormError] = useState('');
@@ -132,7 +142,7 @@ export function RolesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="common.roles" description="common.backend_permissions" />
+        <PageHeader title="common.roles" description="roles.roles_overview" />
         <div className="grid gap-4 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Card key={index} className="p-6 animate-pulse">
@@ -150,38 +160,38 @@ export function RolesPage() {
     <div className="space-y-6">
       <PageHeader
         title="common.roles"
-        description="common.backend_permissions"
+        description="roles.roles_overview"
         actions={
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-            Role changes update managed RBAC profiles for governance-safe administration.
+          <div className={`rounded-2xl border px-4 py-3 text-sm ${isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+            {t('roles.roles_hint')}
           </div>
         }
       />
 
-      {isError && <Card className="p-6 text-rose-200">Unable to load role data.</Card>}
+      {isError && <Card className="p-6 text-rose-600 dark:text-rose-200">{t('roles.unable_load_roles')}</Card>}
 
       <div className="grid gap-4 xl:grid-cols-4">
         {(roles ?? []).map((role) => (
           <Card key={role.slug} className="p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{role.scope}</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">{role.name}</h2>
+                <p className={`text-sm uppercase tracking-[0.3em] ${mutedClass}`}>{role.scope}</p>
+                <h2 className={`mt-3 text-2xl font-semibold ${titleClass}`}>{role.name}</h2>
               </div>
-              <span className={`rounded-full border px-3 py-1 text-xs ${role.hasCustomization ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : 'border-slate-700 bg-slate-900/70 text-slate-300'}`}>
-                {role.hasCustomization ? 'Customized' : 'Default'}
+              <span className={`rounded-full border px-3 py-1 text-xs ${role.hasCustomization ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200' : isDark ? 'border-slate-700 bg-slate-900/70 text-slate-300' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
+                {role.hasCustomization ? t('roles.customized') : t('roles.default')}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-400">{role.description}</p>
+            <p className={`mt-2 text-sm ${mutedClass}`}>{role.description}</p>
             <div className="mt-6 grid gap-3">
-              <div className="rounded-2xl bg-slate-950/70 p-4"><div className="text-sm text-slate-400">Users</div><div className="mt-1 text-xl font-semibold text-white">{role.userCount}</div></div>
-              <div className="rounded-2xl bg-slate-950/70 p-4"><div className="text-sm text-slate-400">Permissions</div><div className="mt-1 text-xl font-semibold text-white">{role.permissionCount}</div></div>
-              <div className="rounded-2xl bg-slate-950/70 p-4"><div className="text-sm text-slate-400">Branch Access</div><div className="mt-1 text-xl font-semibold text-white">{role.branchAccess.scope} ({role.branchAccess.count})</div></div>
+              <div className={`rounded-2xl p-4 ${panelClass}`}><div className={`text-sm ${mutedClass}`}>{t('roles.users_count')}</div><div className={`mt-1 text-xl font-semibold ${titleClass}`}>{role.userCount}</div></div>
+              <div className={`rounded-2xl p-4 ${panelClass}`}><div className={`text-sm ${mutedClass}`}>{t('roles.permissions_count')}</div><div className={`mt-1 text-xl font-semibold ${titleClass}`}>{role.permissionCount}</div></div>
+              <div className={`rounded-2xl p-4 ${panelClass}`}><div className={`text-sm ${mutedClass}`}>{t('roles.branch_access')}</div><div className={`mt-1 text-xl font-semibold ${titleClass}`}>{role.branchAccess.scope} ({role.branchAccess.count})</div></div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => openEditor(role)}>
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
-                {role.hasCustomization ? 'Edit Profile' : 'Customize'}
+                {role.hasCustomization ? t('roles.edit_profile') : t('roles.customize')}
               </Button>
               {role.hasCustomization && role.slug !== 'super_admin' && (
                 <Button
@@ -191,7 +201,7 @@ export function RolesPage() {
                   disabled={resetMutation.isPending}
                   onClick={() => resetMutation.mutate(role.slug)}
                 >
-                  Reset to Default
+                  {t('roles.reset_to_default')}
                 </Button>
               )}
             </div>
@@ -202,7 +212,7 @@ export function RolesPage() {
       <Card className="p-6">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-5 w-5 text-sky-300" />
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Permission Matrix</p>
+          <p className={`text-sm uppercase tracking-[0.3em] ${mutedClass}`}>{t('roles.permission_matrix')}</p>
         </div>
         <div className="mt-4">
           <DataTable columns={matrixColumns} items={roles ?? []} />
@@ -210,11 +220,11 @@ export function RolesPage() {
       </Card>
 
       <Card className="p-6">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Permission Templates</p>
+        <p className={`text-sm uppercase tracking-[0.3em] ${mutedClass}`}>{t('roles.permission_templates')}</p>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {(templates?.modules ?? []).map((module) => (
-            <div key={module.key} className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
-              <div className="text-sm uppercase tracking-[0.2em] text-slate-400">{module.label}</div>
+            <div key={module.key} className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800/80 bg-slate-950/70' : 'border-slate-200 bg-slate-50'}`}>
+              <div className={`text-sm uppercase tracking-[0.2em] ${mutedClass}`}>{module.label}</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {module.actions.map((action) => (
                   <span key={`${module.key}-${action}`} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
@@ -225,7 +235,7 @@ export function RolesPage() {
             </div>
           ))}
           {!templatesLoading && !(templates?.modules ?? []).length && (
-            <div className="text-sm text-slate-400">No permission templates were returned by the backend.</div>
+            <div className={`text-sm ${mutedClass}`}>{t('roles.no_templates')}</div>
           )}
         </div>
       </Card>

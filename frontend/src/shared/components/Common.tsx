@@ -5,6 +5,7 @@ import type { Role } from '@/features/resources/config/modules';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/authStore';
+import { displayText } from '@/utils/displayValue';
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   const { t, i18n } = useTranslation();
@@ -71,23 +72,14 @@ export function DataTable<T>({
 }: {
   columns: TableColumn<T>[];
   items: T[];
-  actions?: TableAction<T>[];
+  actions?: TableAction<T>[] | ((item: T) => TableAction<T>[]);
 }) {
   const { t, i18n } = useTranslation();
   const textAlign = i18n.resolvedLanguage === 'en' ? 'text-left' : 'text-right';
   const fallbackText = t('common.not_available', { defaultValue: 'N/A' });
 
   const stringifyCell = (value: unknown) => {
-    if (value === null || value === undefined) return fallbackText;
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed.length ? trimmed : fallbackText;
-    }
-    if (Array.isArray(value)) {
-      return value.length ? value.map((item) => String(item ?? '')).filter(Boolean).join(', ') : fallbackText;
-    }
-    if (typeof value === 'object') return fallbackText;
-    return String(value);
+    return displayText(value) || fallbackText;
   };
 
   return (
@@ -114,7 +106,7 @@ export function DataTable<T>({
               {actions && (
                 <td className="border-b px-4 py-3 align-top text-sm text-[var(--color-text)]" style={{ borderColor: 'var(--color-border)' }}>
                   <div className="flex flex-wrap gap-2">
-                    {actions.map((action) => (
+                    {(typeof actions === 'function' ? actions(item) : actions).map((action) => (
                       <Button key={action.label} variant={action.variant ?? 'outline'} size="sm" onClick={() => action.onClick(item)} disabled={action.disabled}>
                         {action.label}
                       </Button>

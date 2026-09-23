@@ -28,11 +28,11 @@ export function DashboardLayout() {
     : collapsed ? 'lg:pl-20' : 'lg:pl-[260px]';
 
   return (
-    <div className="min-h-screen bg-background text-slate-100">
+    <div className={`app-bg h-screen overflow-hidden ${i18n.resolvedLanguage === 'en' ? 'ltr' : 'rtl'}`}>
       <Sidebar collapsed={collapsed} open={sidebarOpen} onClose={() => setSidebarOpen(false)} onToggle={() => setCollapsed((prev) => !prev)} />
-      <div className={`flex min-h-screen flex-1 flex-col transition-all duration-300 ${contentSpacing}`}>
+      <div className={`flex h-screen flex-1 flex-col overflow-hidden transition-all duration-300 ${contentSpacing}`}>
         <Navbar title={title} onMenu={() => setSidebarOpen(true)} />
-        <main className="main-content flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="main-content flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

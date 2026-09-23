@@ -8,7 +8,7 @@ export function CampaignPage() {
   const { t } = useTranslation();
   const { data } = useQuery({
     queryKey: ['campaignSummary'],
-    queryFn: dashboardService.summary
+    queryFn: () => dashboardService.summary()
   });
 
   const cards = [

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createError, createResponse } from '../../helpers/response';
 import { CourseService } from './courses.service';
+import { getPublicCourseById } from '../../services/publicCatalogService';
 
 const courseService = new CourseService();
 
@@ -23,9 +24,19 @@ export const coursesController = {
     }
   },
 
+  publicGetById: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const course = await getPublicCourseById(req.params.id, String(req.query.lang || 'en'));
+      if (!course) return res.status(404).json(createError('Course not found'));
+      res.json(createResponse(course));
+    } catch (error) {
+      next(error);
+    }
+  },
+
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { items, meta } = await courseService.list(req.query);
+      const { items, meta } = await courseService.list(req.query, false, false, req);
       res.json(createResponse(items, '', meta));
     } catch (error) {
       next(error);
@@ -44,7 +55,7 @@ export const coursesController = {
 
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const course = await courseService.getById(req.params.id, String(req.query.lang || 'en'));
+      const course = await courseService.getById(req.params.id, String(req.query.lang || 'en'), req);
       if (!course) return res.status(404).json(createError('Course not found'));
       res.json(createResponse(course));
     } catch (error) {

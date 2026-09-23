@@ -1,4 +1,5 @@
 import { config } from '../config/env';
+import mongoose from 'mongoose';
 import { Attendance } from '../models/Attendance';
 import { AttendancePolicy } from '../models/AttendancePolicy';
 import { AuditLog } from '../models/AuditLog';
@@ -12,6 +13,8 @@ import { SalaryTransaction } from '../models/SalaryTransaction';
 import { Student } from '../models/Student';
 import { User } from '../models/User';
 import { BusinessRuleService } from '../services/businessRuleService';
+import { AuditService } from '../services/auditService';
+import { evaluateMessageEscalationsForBranch } from '../modules/intelligence/messageEscalationService';
 
 type JobDefinition = {
   name: string;
@@ -71,21 +74,30 @@ async function registrationExpiryReminder() {
 
   const students = await Student.find({
     registrationExpiryDate: { $lte: reminderDate, $gte: today },
+    warningSentAt: null,
     status: { $ne: 'graduated' },
     isDeleted: false
   }).lean();
 
   for (const student of students) {
-    await Notification.create({
-      branchId: (student as any).branchId ?? null,
-      title: 'Registration expiry reminder',
-      description: `Registration for ${student.firstName} ${student.lastName} expires on ${new Date(student.registrationExpiryDate!).toISOString().slice(0, 10)}.`,
-      message: `Registration for ${student.firstName} ${student.lastName} expires on ${new Date(student.registrationExpiryDate!).toISOString().slice(0, 10)}.`,
-      recipientRoles: ['admin', 'owner', 'branch_manager', 'parent'],
-      recipientIds: [],
-      publishStatus: 'published',
-      publishDate: new Date()
-    });
+    const daysRemaining = Math.max(0, Math.ceil((new Date(student.registrationExpiryDate!).getTime() - today.getTime()) / (24 * 60 * 60 * 1000)));
+    await Promise.all([
+      Student.updateOne({ _id: student._id }, { $set: { warningSentAt: today, accountStatus: 'warning' } }),
+      Notification.create({
+        branchId: (student as any).branchId ?? null,
+        title: 'Registration expiry reminder',
+        description: `Only ${daysRemaining} days remain from your registration.`,
+        message: `Only ${daysRemaining} days remain from your registration.`,
+        recipientRoles: ['student', 'parent', 'admin', 'owner', 'branch_manager'],
+        recipientIds: [],
+        publishStatus: 'published',
+        publishDate: today,
+        category: 'academic_reminder',
+        priority: 'high',
+        metadata: { studentId: student._id, daysRemaining }
+      }),
+      createLifecycleAudit('STUDENT_REGISTRATION_WARNING_SENT', student, { daysRemaining })
+    ]);
   }
 }
 
@@ -227,14 +239,32 @@ async function auditAlerts() {
   });
 }
 
+async function auditLogRetentionCleanup() {
+  const auditService = new AuditService();
+  const softDeleted = await auditService.softDeleteNoisyLogs();
+  const purged = await auditService.purgeOldLogs(90, 365);
+  if (softDeleted || purged.infoPurged || purged.securityPurged) {
+    console.info(
+      `[JOB:audit-log-retention] softDeleted=${softDeleted} infoPurged=${purged.infoPurged} securityPurged=${purged.securityPurged}`
+    );
+  }
+}
+
+async function messageEscalationConsistencyCheck() {
+  await evaluateMessageEscalationsForBranch(null);
+}
+
 const jobs: JobDefinition[] = [
   { name: 'online-attendance-auto-mark', intervalMs: 60 * 60 * 1000, run: onlineAttendanceAutoMark },
   { name: 'registration-expiry-reminder', intervalMs: 12 * 60 * 60 * 1000, run: registrationExpiryReminder },
+  { name: 'student-registration-lifecycle', intervalMs: 6 * 60 * 60 * 1000, run: studentRegistrationLifecycle },
   { name: 'reminder-broadcast', intervalMs: 24 * 60 * 60 * 1000, run: reminderBroadcast },
   { name: 'monthly-salary-calculation', intervalMs: 24 * 60 * 60 * 1000, run: monthlySalaryCalculation },
   { name: 'auto-suspension', intervalMs: 6 * 60 * 60 * 1000, run: autoSuspensionJob },
   { name: 'monthly-financial-reports', intervalMs: 24 * 60 * 60 * 1000, run: monthlyFinancialReports },
-  { name: 'audit-alerts', intervalMs: 60 * 60 * 1000, run: auditAlerts }
+  { name: 'audit-alerts', intervalMs: 60 * 60 * 1000, run: auditAlerts },
+  { name: 'audit-log-retention', intervalMs: 24 * 60 * 60 * 1000, run: auditLogRetentionCleanup },
+  { name: 'message-escalation-check', intervalMs: 30 * 60 * 1000, run: messageEscalationConsistencyCheck }
 ];
 
 export function startAutomationJobs() {
@@ -242,23 +272,140 @@ export function startAutomationJobs() {
     return;
   }
 
-  for (const job of jobs) {
+  for (const [index, job] of jobs.entries()) {
     if (startedJobs.has(job.name)) {
       continue;
     }
 
-    void job.run().catch((error) => {
-      console.error(`[JOB:${job.name}] initial run failed`, error);
-    });
+    const runSafely = async () => {
+      if (mongoose.connection.readyState !== 1) {
+        console.warn(`[JOB:${job.name}] skipped — MongoDB not connected (readyState=${mongoose.connection.readyState})`);
+        return;
+      }
+      await job.run();
+    };
+
+    // Stagger first runs so server startup is not blocked by all jobs at once.
+    const initialDelayMs = 15_000 + index * 5_000;
+    const startupTimer = setTimeout(() => {
+      void runSafely().catch((error) => {
+        console.error(`[JOB:${job.name}] initial run failed`, error);
+      });
+    }, initialDelayMs);
 
     const handle = setInterval(() => {
-      void job.run().catch((error) => {
+      void runSafely().catch((error) => {
         console.error(`[JOB:${job.name}] scheduled run failed`, error);
       });
     }, job.intervalMs);
 
     startedJobs.set(job.name, handle);
+    // Keep a reference so the timeout is not GC'd unexpectedly in edge runtimes.
+    void startupTimer;
   }
+}
+
+async function studentRegistrationLifecycle() {
+  const now = new Date();
+  const warningEnd = new Date(now);
+  warningEnd.setDate(warningEnd.getDate() + 3);
+  const blockCutoff = new Date(now);
+  blockCutoff.setDate(blockCutoff.getDate() - 5);
+
+  const warningStudents = await Student.find({
+    isDeleted: false,
+    accountStatus: 'active',
+    registrationEndDate: { $gte: now, $lte: warningEnd },
+    warningSentAt: null
+  }).lean<any[]>();
+
+  for (const student of warningStudents) {
+    const daysRemaining = Math.max(0, Math.ceil((new Date(student.registrationEndDate).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+    await Promise.all([
+      Student.updateOne({ _id: student._id }, { $set: { accountStatus: 'warning', warningSentAt: now } }),
+      Notification.create({
+        branchId: student.branchId ?? null,
+        title: 'Registration expiry warning',
+        description: `Only ${daysRemaining} days remain from your registration.`,
+        message: `Only ${daysRemaining} days remain from your registration.`,
+        recipientRoles: ['student', 'parent'],
+        recipientIds: [],
+        publishStatus: 'published',
+        publishDate: now,
+        category: 'academic_reminder',
+        priority: 'high',
+        metadata: { studentId: student._id, daysRemaining }
+      }),
+      createLifecycleAudit('STUDENT_REGISTRATION_WARNING_SENT', student, { daysRemaining })
+    ]);
+  }
+
+  const expiringStudents = await Student.find({
+    isDeleted: false,
+    accountStatus: { $in: ['active', 'warning'] },
+    registrationEndDate: { $lt: now }
+  }).lean<any[]>();
+
+  for (const student of expiringStudents) {
+    await Promise.all([
+      Student.updateOne({ _id: student._id }, { $set: { accountStatus: 'expired' } }),
+      Notification.create({
+        branchId: student.branchId ?? null,
+        title: 'Registration expired',
+        description: 'Your registration period has ended.',
+        message: 'Your registration period has ended.',
+        recipientRoles: ['student', 'parent', 'admin', 'branch_manager'],
+        recipientIds: [],
+        publishStatus: 'published',
+        publishDate: now,
+        category: 'academic_reminder',
+        priority: 'high',
+        metadata: { studentId: student._id }
+      }),
+      createLifecycleAudit('STUDENT_REGISTRATION_EXPIRED', student)
+    ]);
+  }
+
+  const blockStudents = await Student.find({
+    isDeleted: false,
+    accountStatus: 'expired',
+    registrationEndDate: { $lte: blockCutoff }
+  }).lean<any[]>();
+
+  for (const student of blockStudents) {
+    await Promise.all([
+      Student.updateOne({ _id: student._id }, { $set: { accountStatus: 'blocked', blockedAt: now, status: 'inactive' } }),
+      User.updateOne({ studentId: student.studentId, role: 'student', isDeleted: false }, { $set: { status: 'blocked', active: false } }),
+      Notification.create({
+        branchId: student.branchId ?? null,
+        title: 'Student account blocked',
+        description: 'Student account has been blocked because registration expired.',
+        message: 'Student account has been blocked because registration expired.',
+        recipientRoles: ['student', 'parent', 'admin', 'branch_manager'],
+        recipientIds: [],
+        publishStatus: 'published',
+        publishDate: now,
+        category: 'academic_reminder',
+        priority: 'urgent',
+        metadata: { studentId: student._id }
+      }),
+      createLifecycleAudit('STUDENT_ACCOUNT_AUTO_BLOCKED', student)
+    ]);
+  }
+}
+
+async function createLifecycleAudit(action: string, student: any, metadata: Record<string, unknown> = {}) {
+  const actor = (await User.findOne({ role: { $in: ['system_automation', 'super_admin'] }, isDeleted: false }).select('_id').lean<any>())?._id;
+  if (!actor) return;
+  await AuditLog.create({
+    actor,
+    branchId: student?.branchId ?? null,
+    action,
+    target: String(student?._id ?? ''),
+    targetType: 'student',
+    severity: action.includes('BLOCKED') ? 'critical' : 'warning',
+    metadata
+  });
 }
 
 export function stopAutomationJobs() {

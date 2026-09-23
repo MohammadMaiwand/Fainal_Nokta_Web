@@ -1,0 +1,24 @@
+export type CatalogOffering = {
+  _id: string;
+  catalogType: 'class' | 'course';
+  titleText: string;
+  shortDescription?: string;
+  descriptionText?: string;
+  fullDescription?: string;
+  teacherName?: string;
+  subjectName?: string;
+  academicCategory?: string;
+  schedule?: string;
+  duration?: string;
+  fee?: number;
+  feeAmount?: number;
+  currency?: string;
+  imageUrl?: string;
+  availableSeats?: number;
+  capacity?: number;
+  registrationOpen?: boolean;
+  classId?: string | null;
+  subjectId?: string | null;
+  teacherId?: string | null;
+  linkedClassId?: string | null;
+};

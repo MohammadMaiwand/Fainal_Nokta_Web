@@ -1,26 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, DollarSign, Receipt, School } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { BookOpen, School } from 'lucide-react';
+import { AfghaniIcon } from '@/components/icons/AfghaniIcon';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
 import { dashboardService } from '@/features/dashboard/services/dashboardService';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 type EcommerceCard = {
   key: 'incomeTotal' | 'expenseTotal' | 'totalBooks' | 'totalClasses';
   label: string;
-  icon: typeof DollarSign;
-  prefix?: string;
+  icon: LucideIcon;
+  currency?: boolean;
 };
 
 export function EcommercePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data } = useQuery({
     queryKey: ['ecommerceSummary'],
-    queryFn: dashboardService.summary
+    queryFn: () => dashboardService.summary()
   });
 
   const cards: EcommerceCard[] = [
-    { key: 'incomeTotal', label: t('common.total_income'), icon: DollarSign, prefix: '$' },
-    { key: 'expenseTotal', label: t('finance.total_expenses'), icon: Receipt, prefix: '$' },
+    { key: 'incomeTotal', label: t('common.total_income'), icon: AfghaniIcon, currency: true },
+    { key: 'expenseTotal', label: t('finance.total_expenses'), icon: AfghaniIcon, currency: true },
     { key: 'totalBooks', label: t('dashboard.total_books'), icon: BookOpen },
     { key: 'totalClasses', label: t('dashboard.total_classes'), icon: School }
   ];
@@ -40,8 +43,9 @@ export function EcommercePage() {
               <div>
                 <p className="text-sm uppercase tracking-wider text-slate-400">{card.label}</p>
                 <h2 className="mt-3 text-3xl font-semibold text-white">
-                  {card.prefix ?? ''}
-                  {(data?.[card.key] ?? 0).toLocaleString()}
+                  {card.currency
+                    ? formatCurrency(data?.[card.key] ?? 0, i18n.resolvedLanguage)
+                    : formatNumber(data?.[card.key] ?? 0, i18n.resolvedLanguage)}
                 </h2>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent text-white">

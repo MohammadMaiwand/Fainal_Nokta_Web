@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -6,26 +6,60 @@ import { ArrowUpDown } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
 import { PageHeader, SearchFilterBar } from '@/shared/components/Common';
 import { expenseService } from '@/features/finance/services/expenseService';
 import { useDebounce } from '@/hooks/useDebounce';
 import { matchesSearch, sortCollection, type ListSortDirection, type ListSortField } from '@/utils/listSearchSort';
+import { formatCurrency, formatDate, formatNumber } from '@/utils/formatters';
+import { JalaliDateInput } from '@/components/forms/JalaliDateInput';
+import { formatIsoToJalaliInput, isValidJalaliDateInput, jalaliInputToIsoDate } from '@/utils/jalaliDateInput';
 
 const COLORS = ['#f97316', '#ef4444', '#eab308', '#14b8a6', '#38bdf8', '#a855f7'];
 
 export function ExpensesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [form, setForm] = useState({ title: '', amount: '', category: '', date: formatIsoToJalaliInput(new Date()), notes: '' });
+  const [formError, setFormError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
   const [sortField, setSortField] = useState<ListSortField>('date');
   const [sortDirection, setSortDirection] = useState<ListSortDirection>('desc');
+  const [period, setPeriod] = useState('this_month');
   const { data: summary, isError } = useQuery({
-    queryKey: ['expense-summary'],
-    queryFn: expenseService.summary
+    queryKey: ['expense-summary', period],
+    queryFn: () => expenseService.summary({ period })
   });
 
   const { data: records, isLoading: recordsLoading } = useQuery({
-    queryKey: ['expense-records'],
-    queryFn: expenseService.list
+    queryKey: ['expense-records', period],
+    queryFn: () => expenseService.list({ period })
+  });
+  const createMutation = useMutation({
+    mutationFn: () => {
+      if (!isValidJalaliDateInput(form.date)) {
+        throw new Error(t('errors.invalid_jalali_date', { defaultValue: 'Date must be in Hijri Shamsi format, for example 1405/2/1.' }));
+      }
+      const isoDate = jalaliInputToIsoDate(form.date);
+      if (!isoDate) {
+        throw new Error(t('errors.invalid_jalali_date', { defaultValue: 'Date must be in Hijri Shamsi format, for example 1405/2/1.' }));
+      }
+      return expenseService.create({
+        title: form.title.trim(),
+        amount: Number(form.amount || 0),
+        category: form.category.trim(),
+        date: isoDate,
+        notes: form.notes.trim()
+      });
+    },
+    onSuccess: () => {
+      setForm({ title: '', amount: '', category: '', date: formatIsoToJalaliInput(new Date()), notes: '' });
+      setFormError('');
+      setShowCreate(false);
+      queryClient.invalidateQueries({ queryKey: ['expense-records'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-summary'] });
+    }
   });
   const debouncedSearch = useDebounce(search, 300);
   const recordSortOptions = useMemo(
@@ -42,14 +76,73 @@ export function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="common.expenses" description="common.live_school_metrics" />
+      <PageHeader
+        title="common.expenses"
+        description="common.live_school_metrics"
+        actions={(
+          <Button type="button" onClick={() => setShowCreate((current) => !current)}>
+            {t('common.add_entity', { entity: t('common.expense') })}
+          </Button>
+        )}
+      />
+
+      {showCreate && (
+        <Card className="space-y-3 p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} placeholder={t('finance.title')} />
+            <Input type="number" value={form.amount} onChange={(e) => setForm((c) => ({ ...c, amount: e.target.value }))} placeholder={t('finance.amount')} />
+            <Input value={form.category} onChange={(e) => setForm((c) => ({ ...c, category: e.target.value }))} placeholder={t('finance.category')} />
+            <JalaliDateInput value={form.date} required onChange={(date) => setForm((c) => ({ ...c, date }))} />
+          </div>
+          {formError && <p className="text-sm text-rose-400">{formError}</p>}
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm((c) => ({ ...c, notes: e.target.value }))}
+            placeholder={t('finance.notes')}
+            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => {
+                setFormError('');
+                createMutation.mutate(undefined, {
+                  onError: (error: any) => setFormError(error?.message ?? t('errors.unable_save', { defaultValue: 'Unable to save.' }))
+                });
+              }}
+              disabled={createMutation.isPending || !form.title.trim() || !form.category.trim() || Number(form.amount) <= 0}
+            >
+              {t('common.create')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {isError && <Card className="p-6 text-rose-200">{t('errors.unable_load_records', { defaultValue: 'Unable to load expense data.' })}</Card>}
 
+      <Card className="p-4">
+        <div className="max-w-xs">
+          <label className="mb-2 block text-sm text-slate-300">دوره گزارش مصارف</label>
+          <Select
+            value={period}
+            options={[
+              { value: 'today', label: 'روزانه' },
+              { value: 'this_week', label: 'هفته‌وار' },
+              { value: 'this_month', label: 'ماهانه' },
+              { value: 'this_year', label: 'سالانه' }
+            ]}
+            onChange={(value) => setPeriod(String(value))}
+          />
+        </div>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.operating_expenses', { defaultValue: 'Operating Expenses' })}</p><p className="mt-3 text-3xl font-semibold text-white">{summary?.totalExpenses?.toLocaleString?.() ?? 0}</p></Card>
-        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.teacher_salaries', { defaultValue: 'Teacher Salaries' })}</p><p className="mt-3 text-3xl font-semibold text-white">{summary?.teacherSalaries?.toLocaleString?.() ?? 0}</p></Card>
-        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.expense_categories', { defaultValue: 'Expense Categories' })}</p><p className="mt-3 text-3xl font-semibold text-white">{summary?.categories?.length ?? 0}</p></Card>
+        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.operating_expenses', { defaultValue: 'Operating Expenses' })}</p><p className="mt-3 text-3xl font-semibold text-white">{formatCurrency(summary?.totalExpenses, i18n.resolvedLanguage)}</p></Card>
+        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.teacher_salaries', { defaultValue: 'Teacher Salaries' })}</p><p className="mt-3 text-3xl font-semibold text-white">{formatCurrency(summary?.teacherSalaries, i18n.resolvedLanguage)}</p></Card>
+        <Card className="p-6"><p className="text-sm text-slate-400">{t('finance.expense_categories', { defaultValue: 'Expense Categories' })}</p><p className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary?.categories?.length, i18n.resolvedLanguage)}</p></Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -118,8 +211,8 @@ export function ExpensesPage() {
                 <div className="font-medium text-white">{record.title}</div>
                 <div className="mt-1 text-sm text-slate-400">{record.category}</div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-slate-300">{new Date(record.date).toLocaleDateString()}</span>
-                  <span className="font-semibold text-rose-400">{record.amount.toLocaleString()}</span>
+                  <span className="text-slate-300">{formatDate(record.date, i18n.resolvedLanguage)}</span>
+                  <span className="font-semibold text-rose-400">{formatCurrency(record.amount, i18n.resolvedLanguage)}</span>
                 </div>
               </div>
               ))}

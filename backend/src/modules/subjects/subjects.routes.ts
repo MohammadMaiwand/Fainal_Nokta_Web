@@ -5,10 +5,12 @@ import { Exam } from '../../models/Exam';
 import { Subject } from '../../models/Subject';
 import { User } from '../../models/User';
 import { Student } from '../../models/Student';
+import { Timetable } from '../../models/Timetable';
 import { authenticate, authorize } from '../../middlewares/auth';
 import { validate } from '../../middlewares/validate';
 import { createResponse, createError } from '../../helpers/response';
 import { paginationSchema } from '../../validators/pagination';
+import { isSuperAdminActor, listRecordFilter } from '../../utils/recordVisibility';
 
 const router = Router();
 
@@ -17,6 +19,7 @@ const subjectCreateSchema = Joi.object({
     title: Joi.string().trim().required(),
     code: Joi.string().trim().required(),
     classId: Joi.string().hex().length(24).required(),
+    classIds: Joi.array().items(Joi.string().hex().length(24)).optional(),
     feeAmount: Joi.number().min(0).default(0),
     teacher: Joi.string().hex().length(24).allow('', null).optional(),
     branchId: Joi.string().hex().length(24).allow('', null).optional(),
@@ -33,6 +36,7 @@ const subjectUpdateSchema = Joi.object({
     title: Joi.string().trim().optional(),
     code: Joi.string().trim().optional(),
     classId: Joi.string().hex().length(24).optional(),
+    classIds: Joi.array().items(Joi.string().hex().length(24)).optional(),
     feeAmount: Joi.number().min(0).optional(),
     teacher: Joi.string().hex().length(24).allow('', null).optional(),
     branchId: Joi.string().hex().length(24).allow('', null).optional(),
@@ -44,6 +48,16 @@ const subjectUpdateSchema = Joi.object({
 const idParamsSchema = Joi.object({
   params: Joi.object({
     id: Joi.string().hex().length(24).required()
+  })
+});
+
+const subjectQuerySchema = Joi.object({
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    search: Joi.string().allow('', null),
+    classId: Joi.string().hex().length(24).optional(),
+    includeDeleted: Joi.boolean().truthy('true').falsy('false').optional()
   })
 });
 
@@ -111,14 +125,93 @@ async function syncClassAssignments(subjectId: string, nextClassId: string, prev
   );
 }
 
-router.get('/', authorize(['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'family_student', 'parent', 'owner']), validate(paginationSchema), async (req, res, next) => {
+async function canAccessSubject(req: any, subject: any) {
+  const role = req.user?.canonicalRole ?? req.user?.role;
+  if (['super_admin', 'admin', 'branch_manager', 'owner'].includes(role)) {
+    if (['admin', 'branch_manager'].includes(role) && req.user?.branchId && String(subject.branchId ?? '') !== String(req.user.branchId)) {
+      return false;
+    }
+    return true;
+  }
+  if (role === 'teacher') {
+    return String(subject.teacher?._id ?? subject.teacher ?? '') === String(req.user.userId);
+  }
+  if (role === 'student') {
+    const currentUser = await User.findById(req.user.userId).select('studentId classId subjectId').lean<any>();
+    const linkedStudent = currentUser?.studentId
+      ? await Student.findOne({ studentId: currentUser.studentId, isDeleted: false }).select('classId subjectId').lean<any>()
+      : null;
+    const scopedClassId = linkedStudent?.classId ?? currentUser?.classId;
+    const scopedSubjectId = linkedStudent?.subjectId ?? currentUser?.subjectId;
+    return String(scopedClassId ?? '') === String(subject.classId?._id ?? subject.classId) && String(scopedSubjectId ?? '') === String(subject._id);
+  }
+  if (role === 'parent' || req.user?.role === 'family_student') {
+    const currentUser = await User.findById(req.user.userId).select('familyId').lean<any>();
+    const students = currentUser?.familyId
+      ? await Student.find({ familyId: currentUser.familyId, isDeleted: false }).select('subjectId').lean<any[]>()
+      : [];
+    return students.some((student) => String(student.subjectId) === String(subject._id));
+  }
+  return false;
+}
+
+router.get('/', authorize(['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'family_student', 'parent', 'owner']), validate(subjectQuerySchema), async (req, res, next) => {
   try {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
     const search = String(req.query.search || '').trim();
-    const filter: any = { isDeleted: false };
+    const includeDeletedQuery = req.query.includeDeleted as unknown;
+    const includeDeleted = isSuperAdminActor(req.user) || includeDeletedQuery === true || includeDeletedQuery === 'true';
+    const role = req.user?.canonicalRole ?? req.user?.role;
+    const filter: any = listRecordFilter(req.user, includeDeleted);
+
+    if ((role === 'admin' || role === 'branch_manager') && req.user?.branchId) {
+      filter.branchId = req.user.branchId;
+    }
 
     if (search) filter.title = { $regex: search, $options: 'i' };
+    if (req.query.classId) {
+      filter.$or = [
+        { classId: req.query.classId },
+        { classIds: req.query.classId }
+      ];
+    }
+    if (role === 'teacher') {
+      filter.teacher = req.user?.userId;
+    }
+
+    if (role === 'student') {
+      const currentUser = await User.findById(req.user?.userId).select('studentId classId subjectId').lean<any>();
+      const linkedStudent = currentUser?.studentId
+        ? await Student.findOne({ studentId: currentUser.studentId, isDeleted: false }).select('classId subjectId').lean<any>()
+        : null;
+      const classId = linkedStudent?.classId ?? currentUser?.classId;
+      const subjectId = linkedStudent?.subjectId ?? currentUser?.subjectId;
+      if (classId && subjectId) {
+        filter.$and = [
+          {
+            $or: [
+              { classId },
+              { classIds: classId }
+            ]
+          },
+          { _id: subjectId }
+        ];
+      } else {
+        filter._id = { $in: [] };
+      }
+    }
+
+    if (role === 'parent' || req.user?.role === 'family_student') {
+      const currentUser = await User.findById(req.user?.userId).select('familyId parentProfileId').lean<any>();
+      const students = await Student.find({
+        isDeleted: false,
+        ...(currentUser?.familyId ? { familyId: currentUser.familyId } : {}),
+        ...(!currentUser?.familyId && currentUser?.parentProfileId ? { parentProfileId: currentUser.parentProfileId } : {})
+      }).select('subjectId').lean<any[]>();
+      const subjectIds = students.map((student) => student.subjectId).filter(Boolean);
+      filter._id = subjectIds.length ? { $in: subjectIds } : { $in: [] };
+    }
 
     const [subjects, total] = await Promise.all([
       Subject.find(filter)
@@ -158,6 +251,7 @@ router.post('/', authorize(['super_admin', 'admin', 'branch_manager']), validate
       code: req.body.code.trim(),
       description: req.body.description ?? '',
       teacher: req.body.teacher || null,
+      classIds: Array.from(new Set([req.body.classId, ...(req.body.classIds ?? [])].map(String))),
       activeStatus: req.body.activeStatus ?? true
     });
 
@@ -180,6 +274,39 @@ router.post('/', authorize(['super_admin', 'admin', 'branch_manager']), validate
   }
 });
 
+router.get('/:id/details', authorize(['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'family_student', 'parent', 'owner']), validate(idParamsSchema), async (req, res, next) => {
+  try {
+    const subject = await Subject.findOne({ _id: req.params.id, isDeleted: false })
+      .populate('teacher', 'name email phone whatsapp')
+      .populate('classId', 'className name classCode feeAmount weeklySchedule')
+      .lean<any>();
+
+    if (!subject) return res.status(404).json(createError('Subject not found'));
+    if (!(await canAccessSubject(req, subject))) return res.status(403).json(createError('Access denied'));
+
+    const [students, timetable] = await Promise.all([
+      Student.find({ subjectId: subject._id, isDeleted: false }).select('firstName lastName studentId status accountStatus').limit(100).lean(),
+      Timetable.find({ subjectId: subject._id, isDeleted: false }).populate('teacherId', 'name email').sort({ dayOfWeek: 1, startTime: 1 }).lean()
+    ]);
+
+    res.json(createResponse({
+      ...serializeSubject(subject),
+      relatedClass: subject.classId,
+      teachers: subject.teacher ? [subject.teacher] : [],
+      students,
+      studentCount: students.length,
+      timetable,
+      attendanceRules: {
+        source: 'timetable',
+        message: 'Attendance is available only during active timetable time.'
+      },
+      status: subject.activeStatus ? 'active' : 'inactive'
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:id', authorize(['super_admin', 'admin', 'branch_manager', 'teacher', 'student', 'family_student', 'parent', 'owner']), validate(idParamsSchema), async (req, res, next) => {
   try {
     const subject = await Subject.findOne({ _id: req.params.id, isDeleted: false })
@@ -188,6 +315,7 @@ router.get('/:id', authorize(['super_admin', 'admin', 'branch_manager', 'teacher
       .lean();
 
     if (!subject) return res.status(404).json(createError('Subject not found'));
+    if (!(await canAccessSubject(req, subject))) return res.status(403).json(createError('Access denied'));
     res.json(createResponse(serializeSubject(subject)));
   } catch (error) {
     next(error);
@@ -228,6 +356,7 @@ const updateSubjectHandler = async (req: any, res: any, next: any) => {
         title: nextTitle,
         code: nextCode,
         classId: nextClassId,
+        classIds: Array.from(new Set([nextClassId, ...(req.body.classIds ?? existingSubject.classIds ?? [])].map(String))),
         teacher: nextTeacherId,
         description: req.body.description ?? existingSubject.description ?? '',
         branchId: req.body.branchId ?? existingSubject.branchId ?? null
@@ -251,6 +380,24 @@ const updateSubjectHandler = async (req: any, res: any, next: any) => {
 
 router.put('/:id', authorize(['super_admin', 'admin', 'branch_manager']), validate(subjectUpdateSchema), updateSubjectHandler);
 router.patch('/:id', authorize(['super_admin', 'admin', 'branch_manager']), validate(subjectUpdateSchema), updateSubjectHandler);
+
+router.patch('/:id/restore', authorize(['super_admin']), validate(idParamsSchema), async (req, res, next) => {
+  try {
+    const subject = await Subject.findOneAndUpdate(
+      { _id: req.params.id },
+      { isDeleted: false, deletedAt: null, deletedBy: null },
+      { new: true }
+    ).lean<any>();
+
+    if (!subject) {
+      return res.status(404).json(createError('Subject not found'));
+    }
+
+    res.json(createResponse(serializeSubject(subject), 'Subject restored successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.delete('/:id', authorize(['super_admin', 'admin']), validate(idParamsSchema), async (req, res, next) => {
   try {

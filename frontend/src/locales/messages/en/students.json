@@ -34,6 +34,7 @@
   "salary_value": "Salary Value",
   "fixed": "Fixed",
   "percentage": "Percentage",
+  "fixed_plus_percentage": "Fixed + Percentage",
   "salary_description": "Salary",
   "total_students_count": "Students",
   "total_salary_value": "Calculated Salary"

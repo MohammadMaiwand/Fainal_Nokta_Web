@@ -27,5 +27,8 @@ export interface ReportsAnalytics {
 }
 
 export const reportsService = {
-  analytics: () => api.get('/reports/analytics').then((res) => res.data.data as ReportsAnalytics)
+  analytics: () => api.get('/reports/analytics').then((res) => res.data.data as ReportsAnalytics),
+  list: () => api.get('/reports').then((res) => (Array.isArray(res.data.data) ? res.data.data : [])),
+  generate: (payload: { type: string; periodKey?: string; branchId?: string }) =>
+    api.post('/reports/generate', payload).then((res) => res.data.data)
 };

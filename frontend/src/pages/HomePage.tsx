@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,12 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { api } from '@/services/apiClient';
-import { offlineHomeAnnouncements, offlineHomeCourses } from '@/services/offlineData';
+import { formatCurrency } from '@/utils/formatters';
+import { CatalogCard } from '@/features/catalog/components/CatalogCard';
+import { CatalogDetailModal } from '@/features/catalog/components/CatalogDetailModal';
+import type { CatalogOffering } from '@/features/catalog/types';
+import { formatJalaliDate } from '@/utils/date';
+import { submitPublicContact } from '@/services/offlineOutbox';
 
 interface HomeNotification {
   _id: string;
@@ -25,21 +30,43 @@ interface HomeNotification {
   teacherName?: string;
 }
 
-interface HomeCourse {
-  _id: string;
-  titleText: string;
-  descriptionText?: string;
-  duration?: string;
-  fee?: number;
-  instructorName?: string;
-  enrollmentStatus?: string;
-  imageUrl?: string;
-  academicCategory?: string;
-  schedule?: string;
+type HomeOffering = CatalogOffering;
+
+function readLocalizedText(value: unknown, language?: string) {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+  const record = value as Record<string, unknown>;
+  const lang = String(language || 'en').split('-')[0];
+  const resolved =
+    record[lang] ??
+    record.en ??
+    record.fa ??
+    record.ps ??
+    Object.values(record).find((item) => typeof item === 'string');
+  return typeof resolved === 'string' ? resolved : '';
 }
 
-function AnimatedHeroTitle({ text }: { text: string }) {
-  const words = text.split(/\s+/).filter(Boolean);
+function normalizeOffering(raw: any, catalogType: 'class' | 'course', language?: string): HomeOffering {
+  return {
+    ...raw,
+    _id: String(raw?._id ?? ''),
+    catalogType,
+    titleText: readLocalizedText(raw?.titleText ?? raw?.className ?? raw?.title, language),
+    shortDescription: readLocalizedText(raw?.shortDescription ?? raw?.descriptionText ?? raw?.description, language),
+    descriptionText: readLocalizedText(raw?.descriptionText ?? raw?.description ?? raw?.shortDescription, language),
+    fullDescription: readLocalizedText(raw?.fullDescription ?? raw?.description ?? raw?.descriptionText, language),
+    teacherName: readLocalizedText(raw?.teacherName ?? raw?.instructorName ?? raw?.teacher?.name, language),
+    subjectName: readLocalizedText(raw?.subjectName ?? raw?.subject?.title, language),
+    academicCategory: readLocalizedText(raw?.academicCategory ?? raw?.category, language),
+    schedule: readLocalizedText(raw?.schedule, language),
+    duration: readLocalizedText(raw?.duration, language),
+    currency: readLocalizedText(raw?.currency, language) || 'AFN'
+  } as HomeOffering;
+}
+
+function AnimatedHeroTitle({ text }: { text: unknown }) {
+  const safeText = typeof text === 'string' ? text : '';
+  const words = safeText.split(/\s+/).filter(Boolean);
 
   return (
     <h1 className="mx-auto max-w-4xl bg-gradient-to-r from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-5xl font-black leading-tight text-transparent drop-shadow-[0_16px_55px_rgba(0,0,0,0.58)] sm:text-6xl lg:text-7xl">
@@ -90,9 +117,14 @@ export const HomePage = memo(function HomePage() {
   const { isDark } = useTheme();
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [contactMessage, setContactMessage] = useState('');
   const [contactStatus, setContactStatus] = useState('');
+  const [contactStatusType, setContactStatusType] = useState<'success' | 'error' | ''>('');
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const lastContactSubmitAt = useRef(0);
   const [activeHeroImage, setActiveHeroImage] = useState(0);
+  const [selectedOffering, setSelectedOffering] = useState<HomeOffering | null>(null);
 
   const heroImages = useMemo(
     () => [
@@ -103,44 +135,70 @@ export const HomePage = memo(function HomePage() {
     []
   );
 
-  const { data: announcements } = useQuery({
+  const { data: announcements, isError: announcementsError, isLoading: announcementsLoading } = useQuery({
     queryKey: ['home-notifications'],
-    queryFn: () => api.get('/notifications/public', { params: { limit: 4 } })
-      .then((res) => res.data.data as HomeNotification[])
-      .catch(() => offlineHomeAnnouncements as HomeNotification[]),
+    queryFn: async () => {
+      const res = await api.get('/notifications/public', { params: { limit: 4 } });
+      return (Array.isArray(res.data.data) ? res.data.data : []) as HomeNotification[];
+    },
     staleTime: 60_000
   });
 
-  const { data: courses } = useQuery({
+  const { data: courses, isError: coursesError, isLoading: coursesLoading } = useQuery({
     queryKey: ['home-courses', i18n.resolvedLanguage],
-    queryFn: () => api.get('/courses/public/home', { params: { limit: 6, lang: i18n.resolvedLanguage || 'en' } })
-      .then((res) => res.data.data as HomeCourse[])
-      .catch(() => offlineHomeCourses as HomeCourse[]),
+    queryFn: async () => {
+      const res = await api.get('/courses/public/home', { params: { limit: 50, lang: i18n.resolvedLanguage || 'en' } });
+      return (Array.isArray(res.data.data) ? res.data.data : [])
+        .map((item: any) => normalizeOffering(item, 'course', i18n.resolvedLanguage));
+    },
     staleTime: 60_000
   });
+
+  const { data: classes, isError: classesError, isLoading: classesLoading } = useQuery({
+    queryKey: ['home-classes', i18n.resolvedLanguage],
+    queryFn: async () => {
+      const res = await api.get('/classes/public/home', { params: { limit: 50, lang: i18n.resolvedLanguage || 'en' } });
+      return (Array.isArray(res.data.data) ? res.data.data : [])
+        .map((item: any) => normalizeOffering(item, 'class', i18n.resolvedLanguage));
+    },
+    staleTime: 60_000
+  });
+
+  const homeCatalogError = announcementsError || coursesError || classesError;
+  const homeCatalogLoading = announcementsLoading || coursesLoading || classesLoading;
 
   const displayedAnnouncements = useMemo(
-    () => (announcements?.length ? announcements : offlineHomeAnnouncements as HomeNotification[]),
-    [announcements]
+    () => {
+      const source = announcements ?? [];
+      return source.map((item: HomeNotification) => ({
+        ...item,
+        title: readLocalizedText(item.title, i18n.resolvedLanguage),
+        description: readLocalizedText(item.description, i18n.resolvedLanguage),
+        message: readLocalizedText(item.message, i18n.resolvedLanguage),
+        className: readLocalizedText(item.className, i18n.resolvedLanguage),
+        subjectName: readLocalizedText(item.subjectName, i18n.resolvedLanguage),
+        teacherName: readLocalizedText(item.teacherName, i18n.resolvedLanguage)
+      }));
+    },
+    [announcements, i18n.resolvedLanguage]
   );
 
+  const displayedClasses = useMemo(
+    () => (classes ?? []).filter((item: HomeOffering) => item.registrationOpen !== false),
+    [classes]
+  );
   const displayedCourses = useMemo(
-    () => (courses?.length ? courses : offlineHomeCourses as HomeCourse[]),
+    () => (courses ?? []).filter((item: HomeOffering) => (item as CatalogOffering).registrationOpen !== false),
     [courses]
   );
-
-  const locale = useMemo(() => {
-    if (i18n.resolvedLanguage === 'fa') return 'fa-AF';
-    if (i18n.resolvedLanguage === 'ps') return 'ps-AF';
-    return 'en-US';
-  }, [i18n.resolvedLanguage]);
 
   const navItems = useMemo(
     () => [
       { id: 'home', label: t('nav_home') },
       { id: 'about', label: t('nav_about') },
-      { id: 'programs', label: t('common.courses') },
-      { id: 'services', label: t('nav_services') },
+      { id: 'courses', label: t('common.courses', { defaultValue: 'Courses' }) },
+      { id: 'classes', label: t('common.classes', { defaultValue: 'Classes' }) },
+      { id: 'notifications', label: t('common.announcements', { defaultValue: 'Announcements' }) },
       { id: 'contact', label: t('nav_contact') }
     ],
     [t]
@@ -181,12 +239,58 @@ export const HomePage = memo(function HomePage() {
     }
   }, []);
 
-  const handleContactSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setContactStatus(t('contact_sent'));
-    setContactName('');
-    setContactEmail('');
-    setContactMessage('');
+    const trimmedName = contactName.trim();
+    const trimmedEmail = contactEmail.trim();
+    const trimmedPhone = contactPhone.trim();
+    const trimmedMessage = contactMessage.trim();
+
+    if (!trimmedName || !trimmedMessage) {
+      setContactStatusType('error');
+      setContactStatus(t('contact_validation_required'));
+      return;
+    }
+
+    if (!trimmedEmail && !trimmedPhone) {
+      setContactStatusType('error');
+      setContactStatus(t('contact_validation_contact'));
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastContactSubmitAt.current < 4000) {
+      return;
+    }
+    lastContactSubmitAt.current = now;
+
+    setContactSubmitting(true);
+    setContactStatusType('');
+    setContactStatus(t('contact_sending'));
+    try {
+      const result = await submitPublicContact({
+        name: trimmedName,
+        email: trimmedEmail || undefined,
+        phone: trimmedPhone || undefined,
+        message: trimmedMessage,
+        subject: t('contact_title')
+      });
+
+      setContactStatusType('success');
+      setContactStatus(result.status === 'queued' ? t('contact_queued') : t('contact_sent'));
+      setContactName('');
+      setContactEmail('');
+      setContactPhone('');
+      setContactMessage('');
+    } catch (error) {
+      setContactStatusType('error');
+      const message = error instanceof Error && error.message.trim()
+        ? error.message
+        : t('contact_error');
+      setContactStatus(message);
+    } finally {
+      setContactSubmitting(false);
+    }
   };
 
   const handleAnnouncementRegister = (announcement: HomeNotification) => {
@@ -209,15 +313,30 @@ export const HomePage = memo(function HomePage() {
     navigate(`/register?${params.toString()}`);
   };
 
-  const handleCourseRegister = (course: HomeCourse) => {
+  const handleOfferingRegister = (item: HomeOffering) => {
+    const params = new URLSearchParams();
+    if (item.catalogType === 'course') {
+      params.set('courseId', item._id);
+      params.set('sourceType', 'course');
+      if (item.classId) params.set('classId', item.classId);
+      if (item.subjectId) params.set('subjectId', item.subjectId);
+      if (item.teacherId) params.set('teacherId', item.teacherId);
+    } else {
+      params.set('classId', item.classId ?? item._id);
+      params.set('sourceType', 'class');
+      if (item.subjectId) params.set('subjectId', item.subjectId);
+      if (item.teacherId) params.set('teacherId', item.teacherId);
+    }
+    params.set('sourceTitle', item.titleText);
     localStorage.setItem('nokta-selected-registration', JSON.stringify({
-      sourceType: 'course',
-      title: course.titleText,
-      fee: course.fee ?? 0,
-      schedule: course.schedule ?? '',
-      teacherName: course.instructorName ?? ''
+      sourceType: item.catalogType,
+      title: item.titleText,
+      classId: params.get('classId'),
+      subjectId: params.get('subjectId'),
+      teacherId: params.get('teacherId'),
+      courseId: params.get('courseId')
     }));
-    navigate(`/register?sourceType=course&sourceTitle=${encodeURIComponent(course.titleText)}`);
+    navigate(`/register?${params.toString()}`);
   };
 
   const pageClass = isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900';
@@ -227,14 +346,30 @@ export const HomePage = memo(function HomePage() {
   const textClass = isDark ? 'text-slate-400' : 'text-slate-600';
   const sectionBorderClass = isDark ? 'border-slate-800/80' : 'border-slate-200/80';
   const cardClass = isDark ? 'border-slate-800/80 bg-slate-900/85 shadow-slate-950/20' : 'border-slate-200 bg-white shadow-slate-200/70';
+  const courseCardClass = isDark
+    ? 'border-slate-800/80 bg-slate-900/90 shadow-slate-950/25 hover:border-sky-400/55'
+    : 'border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] hover:border-sky-300 hover:shadow-[0_30px_80px_rgba(14,165,233,0.18)]';
+  const courseMediaClass = isDark
+    ? 'bg-gradient-to-br from-slate-800 via-slate-900 to-sky-950 text-sky-200'
+    : 'bg-gradient-to-br from-sky-50 via-white to-emerald-50 text-sky-700';
   const insetCardClass = isDark ? 'border-slate-800/80 bg-slate-950/70 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700';
   const serviceSectionClass = isDark ? 'bg-slate-900/80' : 'bg-white';
   const inputClass = isDark
     ? 'border-slate-800/80 bg-slate-900/80 text-slate-100 focus:border-sky-500 focus:ring-sky-500/20'
     : 'border-slate-200 bg-white text-slate-900 focus:border-sky-500 focus:ring-sky-500/20';
+  const loginNavButtonClass = isDark
+    ? 'border-slate-600/70 bg-slate-800/70 text-slate-100 hover:bg-slate-700/80'
+    : 'border-sky-300 bg-white text-sky-800 shadow-sm hover:bg-sky-50';
 
   return (
     <div className={`min-h-screen ${pageClass}`}>
+      {(homeCatalogError || homeCatalogLoading) && (
+        <div className="relative z-[60] border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-900 dark:text-amber-100">
+          {homeCatalogLoading
+            ? t('common.loading')
+            : t('errors.unable_load_records')}
+        </div>
+      )}
       <header className={`fixed inset-x-0 top-0 z-50 border-b ${headerClass} backdrop-blur-xl`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
@@ -265,7 +400,7 @@ export const HomePage = memo(function HomePage() {
             <div className="hidden md:flex">
               <LanguageSwitcher />
             </div>
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/login')}>
+            <Button variant="outline" size="sm" className={`hidden sm:inline-flex ${loginNavButtonClass}`} onClick={() => navigate('/login')}>
               {t('nav_login')}
             </Button>
           </div>
@@ -293,7 +428,6 @@ export const HomePage = memo(function HomePage() {
           <div className="relative mx-auto flex min-h-[calc(100vh-10rem)] max-w-7xl flex-col justify-between gap-10">
             <div className="mx-auto flex max-w-5xl flex-1 flex-col items-center justify-center text-center">
               <div className="space-y-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.42em] text-amber-200 drop-shadow-[0_2px_18px_rgba(245,158,11,0.45)]">{t('home_intro_label')}</p>
                 <AnimatedHeroTitle text={t('hero_title')} />
                 <p className="mx-auto max-w-3xl text-lg font-medium leading-8 text-amber-50/95 drop-shadow-[0_8px_30px_rgba(0,0,0,0.62)] sm:text-xl">
                   {t('hero_description')}
@@ -301,13 +435,13 @@ export const HomePage = memo(function HomePage() {
               </div>
 
               <div className="mt-8 flex flex-row flex-wrap items-center justify-center gap-4">
-                <Button size="md" className="min-w-[150px] border border-amber-200/40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 py-4 text-slate-950 shadow-[0_18px_60px_rgba(245,158,11,0.32)] hover:scale-[1.02]" onClick={() => navigate('/login')}>
+                <Button size="md" className="min-w-[150px] py-4 shadow-[0_18px_60px_rgba(14,165,233,0.26)] hover:scale-[1.02]" onClick={() => navigate('/login')}>
                   {t('hero_cta_login')}
                 </Button>
-                <Button size="md" className="min-w-[150px] border border-amber-200/40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 py-4 text-slate-950 shadow-[0_18px_60px_rgba(245,158,11,0.32)] hover:scale-[1.02]" onClick={() => scrollTo('about')}>
+                <Button size="md" className="min-w-[150px] py-4 shadow-[0_18px_60px_rgba(14,165,233,0.26)] hover:scale-[1.02]" onClick={() => scrollTo('about')}>
                   {t('hero_cta_learn_more')}
                 </Button>
-                <Button size="md" className="min-w-[150px] border border-amber-200/40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 py-4 text-slate-950 shadow-[0_18px_60px_rgba(245,158,11,0.32)] hover:scale-[1.02]" onClick={() => scrollTo('contact')}>
+                <Button size="md" className="min-w-[150px] py-4 shadow-[0_18px_60px_rgba(14,165,233,0.26)] hover:scale-[1.02]" onClick={() => scrollTo('contact')}>
                   {t('hero_cta_contact')}
                 </Button>
               </div>
@@ -332,7 +466,7 @@ export const HomePage = memo(function HomePage() {
                   <p className="text-sm leading-6 text-slate-300">{t('home_login_hint')}</p>
                 </div>
                 <div className="mt-5">
-                  <Button className="w-full border border-amber-200/40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 py-3 text-slate-950" onClick={() => navigate('/login')}>
+                  <Button className="w-full py-3" onClick={() => navigate('/login')}>
                     {t('hero_cta_login')}
                   </Button>
                 </div>
@@ -385,54 +519,61 @@ export const HomePage = memo(function HomePage() {
           </div>
         </MotionSection>
 
-        <MotionSection id="programs" className={`border-t ${sectionBorderClass} px-4 py-20 sm:px-6 lg:px-8`}>
+        <MotionSection id="courses" className={`border-t ${sectionBorderClass} px-4 py-20 sm:px-6 lg:px-8`}>
           <div className="mx-auto max-w-7xl">
             <div className="max-w-3xl space-y-4">
-              <p className="text-sky-400 uppercase tracking-[0.3em] text-xs">{t('common.educational_programs')}</p>
-              <h2 className={`text-4xl font-semibold ${titleClass}`}>{t('common.educational_programs_title')}</h2>
+              <p className="text-sky-400 uppercase tracking-[0.3em] text-xs">{t('common.courses', { defaultValue: 'Courses' })}</p>
+              <h2 className={`text-4xl font-semibold ${titleClass}`}>{t('common.courses', { defaultValue: 'Courses' })}</h2>
               <p className={`text-lg leading-8 ${textClass}`}>{t('common.educational_programs_description')}</p>
             </div>
 
             <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {displayedCourses.map((course) => (
-                <motion.article
-                  key={course._id}
-                  className={`overflow-hidden rounded-3xl border ${cardClass} shadow-2xl transition duration-500 hover:-translate-y-1 hover:border-amber-400/60`}
-                  variants={sectionReveal}
-                >
-                  <div className="aspect-[16/9] bg-slate-800">
-                    {course.imageUrl ? (
-                      <img src={course.imageUrl} alt={course.titleText} className="h-full w-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="grid h-full place-items-center bg-gradient-to-br from-slate-800 via-slate-900 to-sky-950 text-sky-200">
-                        <span className="text-sm uppercase tracking-[0.3em]">{t('common.course')}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-4 p-6">
-                    <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-sky-300">
-                      <span>{course.academicCategory || t('common.general')}</span>
-                      <span>{course.enrollmentStatus ? t(`common.${course.enrollmentStatus}`, { defaultValue: course.enrollmentStatus }) : ''}</span>
-                    </div>
-                    <h3 className={`text-2xl font-semibold ${titleClass}`}>{course.titleText}</h3>
-                    <p className={`text-sm leading-7 ${textClass}`}>{course.descriptionText || t('common.not_available')}</p>
-                    <div className={`grid gap-3 text-sm sm:grid-cols-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                      <p>{t('classes.class_name')}: {course.titleText}</p>
-                      <p>{t('students.subject')}: {course.academicCategory || t('common.general')}</p>
-                      <p>{t('common.duration')}: {course.duration || t('common.not_available')}</p>
-                      <p>{t('common.fee')}: {course.fee ?? 0}</p>
-                      <p className="sm:col-span-2">{t('common.instructor')}: {course.instructorName || t('common.not_available')}</p>
-                      <p className="sm:col-span-2">{t('common.schedule')}: {course.schedule || t('common.not_available')}</p>
-                    </div>
-                    <Button size="sm" onClick={() => handleCourseRegister(course)}>
-                      {t('common.register')}
-                    </Button>
-                  </div>
-                </motion.article>
+              {displayedCourses.map((item: HomeOffering) => (
+                <CatalogCard
+                  key={`${item.catalogType}-${item._id}`}
+                  item={item}
+                  isDark={isDark}
+                  onViewDetails={(item) => {
+                    setSelectedOffering(item);
+                    navigate(`/home/${item.catalogType === 'class' ? 'classes' : 'courses'}/${item._id}`);
+                  }}
+                  onRegister={handleOfferingRegister}
+                />
               ))}
             </div>
 
             {!displayedCourses.length && (
+              <div className={`mt-12 rounded-3xl border border-dashed ${sectionBorderClass} p-8 text-center ${textClass}`}>
+                {t('common.no_records_found')}
+              </div>
+            )}
+          </div>
+        </MotionSection>
+
+        <MotionSection id="classes" className={`${serviceSectionClass} border-t ${sectionBorderClass} px-4 py-20 sm:px-6 lg:px-8`}>
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl space-y-4">
+              <p className="text-sky-400 uppercase tracking-[0.3em] text-xs">{t('common.classes', { defaultValue: 'Classes' })}</p>
+              <h2 className={`text-4xl font-semibold ${titleClass}`}>{t('common.classes', { defaultValue: 'Classes' })}</h2>
+              <p className={`text-lg leading-8 ${textClass}`}>{t('common.public_classes_description', { defaultValue: 'Explore active public classes with teacher, fee, schedule, and enrollment details.' })}</p>
+            </div>
+
+            <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {displayedClasses.map((item: HomeOffering) => (
+                <CatalogCard
+                  key={`${item.catalogType}-${item._id}`}
+                  item={item}
+                  isDark={isDark}
+                  onViewDetails={(item) => {
+                    setSelectedOffering(item);
+                    navigate(`/home/${item.catalogType === 'class' ? 'classes' : 'courses'}/${item._id}`);
+                  }}
+                  onRegister={handleOfferingRegister}
+                />
+              ))}
+            </div>
+
+            {!displayedClasses.length && (
               <div className={`mt-12 rounded-3xl border border-dashed ${sectionBorderClass} p-8 text-center ${textClass}`}>
                 {t('common.no_records_found')}
               </div>
@@ -450,7 +591,9 @@ export const HomePage = memo(function HomePage() {
             <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {services.map((service) => (
                 <motion.div key={service} className={`group rounded-[2rem] border ${cardClass} p-8 shadow-2xl transition duration-500 hover:-translate-y-1 hover:border-sky-500/50`} variants={sectionReveal}>
-                  <div className="mb-6 inline-flex rounded-full bg-sky-500/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
+                  <div className={`mb-6 inline-flex rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] ${
+                    isDark ? 'bg-sky-500/10 text-sky-300' : 'bg-sky-100 text-sky-700'
+                  }`}>
                     {t('service_tag')}
                   </div>
                   <h3 className={`text-2xl font-semibold ${titleClass}`}>{service}</h3>
@@ -474,7 +617,7 @@ export const HomePage = memo(function HomePage() {
                 <motion.article key={announcement._id} className={`overflow-hidden rounded-[2rem] border ${cardClass} shadow-2xl transition duration-500 hover:-translate-y-1 hover:border-sky-500/50`} variants={sectionReveal}>
                   <div className="space-y-4 p-6">
                     <p className="text-xs uppercase tracking-[0.25em] text-sky-300">
-                      {announcement.publishDate ? new Date(announcement.publishDate).toLocaleDateString(locale) : ''}
+                      {announcement.publishDate ? formatJalaliDate(announcement.publishDate, i18n.resolvedLanguage) : ''}
                     </p>
                     <h3 className={`text-2xl font-semibold ${titleClass}`}>{announcement.title}</h3>
                     <p className={`text-sm leading-7 ${textClass}`}>{announcement.description || announcement.message || t('common.not_available')}</p>
@@ -510,9 +653,13 @@ export const HomePage = memo(function HomePage() {
                 <p className={`text-lg leading-8 ${textClass}`}>{t('contact_description')}</p>
                 <div className={`space-y-4 rounded-3xl border ${cardClass} p-6`}>
                   <p className={`text-base font-semibold ${titleClass}`}>{t('contact_email')}</p>
-                  <p className={textClass}>support@noktaacademy.edu</p>
+                  <a href={`mailto:${t('contact_email_value')}`} className={`${textClass} hover:text-sky-400`}>
+                    {t('contact_email_value')}
+                  </a>
                   <p className={`text-base font-semibold ${titleClass}`}>{t('contact_phone')}</p>
-                  <p className={textClass}>+98 21 1234 5678</p>
+                  <a href={`tel:${t('contact_phone_value')}`} className={`${textClass} hover:text-sky-400`}>
+                    {t('contact_phone_value')}
+                  </a>
                   <p className={`text-base font-semibold ${titleClass}`}>{t('contact_address')}</p>
                   <p className={textClass}>{t('contact_address_text')}</p>
                 </div>
@@ -531,6 +678,10 @@ export const HomePage = memo(function HomePage() {
                     <Input value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder={t('contact_form_email_placeholder')} type="email" />
                   </div>
                   <div>
+                    <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('contact_phone')}</label>
+                    <Input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder={t('contact_phone_value')} />
+                  </div>
+                  <div>
                     <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('contact_form_message')}</label>
                     <textarea
                       value={contactMessage}
@@ -540,9 +691,13 @@ export const HomePage = memo(function HomePage() {
                       className={`w-full rounded-3xl border px-4 py-3 outline-none transition focus:ring-2 ${inputClass}`}
                     />
                   </div>
-                  {contactStatus && <p className="text-sm text-emerald-400">{contactStatus}</p>}
-                  <Button type="submit" className="w-full py-4">
-                    {t('contact_form_submit')}
+                  {contactStatus && (
+                    <p className={`text-sm ${contactStatusType === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {contactStatus}
+                    </p>
+                  )}
+                  <Button type="submit" className="w-full py-4" disabled={contactSubmitting}>
+                    {contactSubmitting ? t('contact_sending') : t('contact_form_submit')}
                   </Button>
                 </form>
               </div>
@@ -577,6 +732,15 @@ export const HomePage = memo(function HomePage() {
           </div>
         </footer>
       </main>
+      <CatalogDetailModal
+        item={selectedOffering}
+        isDark={isDark}
+        onClose={() => setSelectedOffering(null)}
+        onRegister={(item) => {
+          setSelectedOffering(null);
+          handleOfferingRegister(item);
+        }}
+      />
     </div>
   );
 });

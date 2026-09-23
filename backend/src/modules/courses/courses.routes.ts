@@ -12,6 +12,7 @@ const viewCourses = requireRole('super_admin', 'admin', 'branch_manager', 'teach
 
 router.get('/public/home', validate(courseQuerySchema), coursesController.publicHome);
 router.get('/public', validate(courseQuerySchema), coursesController.publicList);
+router.get('/public/:id', validate(idParamsSchema), coursesController.publicGetById);
 
 router.use(authenticate);
 

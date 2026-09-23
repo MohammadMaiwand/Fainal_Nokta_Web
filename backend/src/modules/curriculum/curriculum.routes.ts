@@ -7,6 +7,7 @@ import { authenticate } from '../../middlewares/auth';
 import { requireRole } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import { paginationSchema } from '../../validators/pagination';
+import { listRecordFilter } from '../../utils/recordVisibility';
 import { createError, createResponse } from '../../helpers/response';
 
 const router = Router();
@@ -62,10 +63,11 @@ async function assertRelations(payload: Record<string, any>) {
 }
 
 function normalizePayload(req: Request, body: Record<string, any>) {
+  const isBranchManager = req.user?.canonicalRole === 'branch_manager' && req.user.branchId;
   return {
     ...body,
     code: body.code ? String(body.code).trim().toUpperCase() : undefined,
-    branchId: normalizeNullableId(body.branchId) ?? req.user?.branchId ?? null,
+    branchId: isBranchManager ? req.user?.branchId ?? null : (normalizeNullableId(body.branchId) ?? req.user?.branchId ?? null),
     classId: normalizeNullableId(body.classId),
     subjectId: normalizeNullableId(body.subjectId)
   };
@@ -90,7 +92,10 @@ router.get('/', viewCurriculum, validate(paginationSchema), async (req, res, nex
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
     const search = String(req.query.search || '').trim();
-    const filter: any = { isDeleted: false };
+    const filter: any = { ...listRecordFilter(req.user) };
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -132,7 +137,11 @@ router.post('/', manageCurriculum, validate(createCurriculumSchema), async (req,
 
 router.get('/:id', viewCurriculum, validate(idParamsSchema), async (req, res, next) => {
   try {
-    const item = await Curriculum.findOne({ _id: req.params.id, isDeleted: false })
+    const filter: Record<string, unknown> = { _id: req.params.id, isDeleted: false };
+    if (req.user?.canonicalRole === 'branch_manager' && req.user.branchId) {
+      filter.branchId = req.user.branchId;
+    }
+    const item = await Curriculum.findOne(filter)
       .populate('classId', 'className name')
       .populate('subjectId', 'title code')
       .lean();

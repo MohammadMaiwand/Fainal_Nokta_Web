@@ -1,888 +1,914 @@
 # System Accounts
 
-## Super Admin
-Name: Super Admin
+## Super Admin (only account currently in this database)
+Name: Maihan Super Admin
 Email: admin@gmail.com
 Password: 12345678
 Role: super_admin
 
+> Note: Demo dropdown accounts on the login page now use this same account.
+> Other seeded emails (admin1@nokta.com, teacher1@nokta.com, ...) are NOT in the DB
+> until you run a full seed. Do not use password `Admin123!` for this super admin.
+
 ## Admins
-Name: Bridget Champlin
+Name: Jamar Gislason
 Email: admin1@nokta.com
 Password: Admin123!
 Role: admin
 
-Name: Camille Yundt
+Name: Mrs. Sydnee Welch
 Email: admin2@nokta.com
 Password: Admin123!
 Role: admin
 
-Name: Eloisa Bogisich
+Name: Annie Mertz
 Email: admin3@nokta.com
 Password: Admin123!
 Role: admin
 
-Name: Matt Metz
+Name: Hillard Jakubowski
 Email: admin4@nokta.com
 Password: Admin123!
 Role: admin
 
-Name: Araceli Morar
+Name: Cory Lubowitz
 Email: admin5@nokta.com
 Password: Admin123!
 Role: admin
 
 ## Teachers
-Name: Ethyl Towne
+Name: Kent Erdman
 Email: teacher1@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 33%
+Assigned Students: 10
 
-Name: Dewey Brakus
+Name: Keaton Cormier
 Email: teacher2@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 26%
+Assigned Students: 10
 
-Name: Lauretta Weber
+Name: Johnny Pagac
 Email: teacher3@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 26%
+Assigned Students: 10
 
-Name: Anderson Dickinson
+Name: Ira Abshire-Stehr
 Email: teacher4@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 32%
+Assigned Students: 10
 
-Name: Marilou McLaughlin
+Name: Saul Schmitt
 Email: teacher5@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 24%
+Assigned Students: 10
 
-Name: Brody Wyman
+Name: Wilma Marvin
 Email: teacher6@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 36%
+Assigned Students: 10
 
-Name: Amari Upton
+Name: Lonnie Thiel
 Email: teacher7@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 37%
+Assigned Students: 10
 
-Name: Kari Reynolds
+Name: Christine Kunde
 Email: teacher8@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 31%
+Assigned Students: 10
 
-Name: Hilbert D'Amore
+Name: Queenie Kuhic
 Email: teacher9@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 40%
+Assigned Students: 10
 
-Name: Darnell Bosco
+Name: Donavon Smith
 Email: teacher10@nokta.com
 Password: Teacher123!
 Role: teacher
+Commission: 23%
+Assigned Students: 10
 
 ## Students
-Name: Zaria McDermott
+Name: Keeley Sauer
 Email: student1@nokta.com
 Password: Student123!
 Role: student
 
-Name: Shaniya Ferry-Feest
+Name: Lucia Rodriguez
 Email: student2@nokta.com
 Password: Student123!
 Role: student
 
-Name: Jacqueline Dare
+Name: Rhett Herzog
 Email: student3@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ross Dickinson
+Name: Caleigh Franecki
 Email: student4@nokta.com
 Password: Student123!
 Role: student
 
-Name: Catherine Wyman
+Name: Tommie Kuhn-Krajcik
 Email: student5@nokta.com
 Password: Student123!
 Role: student
 
-Name: Kaia Mante
+Name: Theresa McKenzie
 Email: student6@nokta.com
 Password: Student123!
 Role: student
 
-Name: Jacqueline Boehm
+Name: Matthew Lehner
 Email: student7@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ginger Funk
+Name: Antonio Hartmann
 Email: student8@nokta.com
 Password: Student123!
 Role: student
 
-Name: Adolfo Gorczany
+Name: Jordyn Schamberger
 Email: student9@nokta.com
 Password: Student123!
 Role: student
 
-Name: Amina Crist
+Name: Christie Kassulke
 Email: student10@nokta.com
 Password: Student123!
 Role: student
 
-Name: Werner Lueilwitz
+Name: Graciela Schiller
 Email: student11@nokta.com
 Password: Student123!
 Role: student
 
-Name: Name Beahan
+Name: Charlotte Aufderhar
 Email: student12@nokta.com
 Password: Student123!
 Role: student
 
-Name: Cornelius Anderson
+Name: Randolph Bailey
 Email: student13@nokta.com
 Password: Student123!
 Role: student
 
-Name: Demario Wintheiser
+Name: Madyson Shields
 Email: student14@nokta.com
 Password: Student123!
 Role: student
 
-Name: Emely Keebler
+Name: Tamara Raynor
 Email: student15@nokta.com
 Password: Student123!
 Role: student
 
-Name: Margie Jones
+Name: Israel Bosco
 Email: student16@nokta.com
 Password: Student123!
 Role: student
 
-Name: Roslyn Feil-Steuber
+Name: Moshe Maggio-Sanford
 Email: student17@nokta.com
 Password: Student123!
 Role: student
 
-Name: Kristin Koch
+Name: Marsha Kovacek
 Email: student18@nokta.com
 Password: Student123!
 Role: student
 
-Name: Wilber Hoeger
+Name: Dominic Hoeger-Brown
 Email: student19@nokta.com
 Password: Student123!
 Role: student
 
-Name: Odessa Bradtke
+Name: Godfrey Romaguera
 Email: student20@nokta.com
 Password: Student123!
 Role: student
 
-Name: Eldred Stark
+Name: Simeon Schiller
 Email: student21@nokta.com
 Password: Student123!
 Role: student
 
-Name: Victoria Gleason
+Name: Betsy Lebsack
 Email: student22@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ian Zulauf
+Name: Nikki Erdman
 Email: student23@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ismael Harber
+Name: Lester Howell
 Email: student24@nokta.com
 Password: Student123!
 Role: student
 
-Name: Carmella Gorczany-Dooley
+Name: Willard Monahan
 Email: student25@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ben Kutch
+Name: Loyal Rolfson
 Email: student26@nokta.com
 Password: Student123!
 Role: student
 
-Name: Burley Rath
+Name: Marshall Green
 Email: student27@nokta.com
 Password: Student123!
 Role: student
 
-Name: Delores Stehr
+Name: Emery Anderson
 Email: student28@nokta.com
 Password: Student123!
 Role: student
 
-Name: Hilda Jerde
+Name: Pam Skiles
 Email: student29@nokta.com
 Password: Student123!
 Role: student
 
-Name: Nina McClure
+Name: Susie Kohler
 Email: student30@nokta.com
 Password: Student123!
 Role: student
 
-Name: Rosa Wintheiser
+Name: Bobby Treutel
 Email: student31@nokta.com
 Password: Student123!
 Role: student
 
-Name: Katharina Lueilwitz
+Name: Marques Gleichner
 Email: student32@nokta.com
 Password: Student123!
 Role: student
 
-Name: Shad Howe
+Name: Christopher Strosin
 Email: student33@nokta.com
 Password: Student123!
 Role: student
 
-Name: Catherine Bruen
+Name: Eloise Yundt
 Email: student34@nokta.com
 Password: Student123!
 Role: student
 
-Name: Erica Kutch
+Name: Rafaela Cronin-Kemmer
 Email: student35@nokta.com
 Password: Student123!
 Role: student
 
-Name: Roberta Brown
+Name: Gene King
 Email: student36@nokta.com
 Password: Student123!
 Role: student
 
-Name: Tom Schneider
+Name: Jackson Gorczany
 Email: student37@nokta.com
 Password: Student123!
 Role: student
 
-Name: Nathen Torphy
+Name: Leilani Simonis
 Email: student38@nokta.com
 Password: Student123!
 Role: student
 
-Name: Jayda Sporer
+Name: Kristine Renner-Shanahan
 Email: student39@nokta.com
 Password: Student123!
 Role: student
 
-Name: Damon Maggio
+Name: Fernando Tillman
 Email: student40@nokta.com
 Password: Student123!
 Role: student
 
-Name: Janick Schmeler
+Name: Vern Stokes
 Email: student41@nokta.com
 Password: Student123!
 Role: student
 
-Name: Sam Sawayn
+Name: Eleonore Armstrong
 Email: student42@nokta.com
 Password: Student123!
 Role: student
 
-Name: Keenan Macejkovic
+Name: Matilda Kilback
 Email: student43@nokta.com
 Password: Student123!
 Role: student
 
-Name: Chelsea Hegmann-Tromp
+Name: Rufus Funk
 Email: student44@nokta.com
 Password: Student123!
 Role: student
 
-Name: Marlon Ebert
+Name: Aubrey Johns
 Email: student45@nokta.com
 Password: Student123!
 Role: student
 
-Name: Colton Klein
+Name: Philip Connelly
 Email: student46@nokta.com
 Password: Student123!
 Role: student
 
-Name: Heidi Hansen
+Name: Buster Zieme
 Email: student47@nokta.com
 Password: Student123!
 Role: student
 
-Name: Lilliana Kozey
+Name: Lonnie Russel
 Email: student48@nokta.com
 Password: Student123!
 Role: student
 
-Name: Earl Corwin
+Name: Camylle Kiehn
 Email: student49@nokta.com
 Password: Student123!
 Role: student
 
-Name: Connie Ondricka-Shanahan
+Name: Carol Bins
 Email: student50@nokta.com
 Password: Student123!
 Role: student
 
-Name: Bennie Conn
+Name: Pete Schamberger
 Email: student51@nokta.com
 Password: Student123!
 Role: student
 
-Name: Melanie Ritchie
+Name: Cortney Reichel
 Email: student52@nokta.com
 Password: Student123!
 Role: student
 
-Name: Stuart Terry
+Name: Randall Maggio
 Email: student53@nokta.com
 Password: Student123!
 Role: student
 
-Name: Raoul Wehner
+Name: Thelma Kuvalis
 Email: student54@nokta.com
 Password: Student123!
 Role: student
 
-Name: Michale Corwin
+Name: Victoria Mann
 Email: student55@nokta.com
 Password: Student123!
 Role: student
 
-Name: Alexandrea Thompson
+Name: Warren MacGyver
 Email: student56@nokta.com
 Password: Student123!
 Role: student
 
-Name: Kristoffer Bosco
+Name: Tyson Marks
 Email: student57@nokta.com
 Password: Student123!
 Role: student
 
-Name: Adell Koelpin
+Name: Renee Flatley
 Email: student58@nokta.com
 Password: Student123!
 Role: student
 
-Name: Tommie Bergnaum
+Name: Arlie Conn
 Email: student59@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ana Renner-Hilpert
+Name: Hertha Boyer
 Email: student60@nokta.com
 Password: Student123!
 Role: student
 
-Name: Dallin Gerlach
+Name: Clarence Altenwerth
 Email: student61@nokta.com
 Password: Student123!
 Role: student
 
-Name: Rosie Tillman
+Name: Claudie Wilkinson
 Email: student62@nokta.com
 Password: Student123!
 Role: student
 
-Name: Wayne Beier-Predovic
+Name: Lonzo Macejkovic
 Email: student63@nokta.com
 Password: Student123!
 Role: student
 
-Name: Elias Wolff
+Name: Susan O'Reilly
 Email: student64@nokta.com
 Password: Student123!
 Role: student
 
-Name: Carlton Jast
+Name: Erin Farrell
 Email: student65@nokta.com
 Password: Student123!
 Role: student
 
-Name: Carol Dooley
+Name: Felix Glover
 Email: student66@nokta.com
 Password: Student123!
 Role: student
 
-Name: Rafael Bins
+Name: Amie Graham
 Email: student67@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ernestine Ruecker
+Name: Odessa Bartoletti
 Email: student68@nokta.com
 Password: Student123!
 Role: student
 
-Name: Dimitri Grady
+Name: Rebekah Homenick
 Email: student69@nokta.com
 Password: Student123!
 Role: student
 
-Name: Amos Schneider
+Name: Brandy Fisher
 Email: student70@nokta.com
 Password: Student123!
 Role: student
 
-Name: Cody Dibbert
+Name: Arnaldo Wuckert
 Email: student71@nokta.com
 Password: Student123!
 Role: student
 
-Name: Oma Zieme-Little
+Name: Callie Hilll
 Email: student72@nokta.com
 Password: Student123!
 Role: student
 
-Name: Bobbie Kessler
+Name: Leta Marquardt
 Email: student73@nokta.com
 Password: Student123!
 Role: student
 
-Name: Karen Bergstrom
+Name: Veda Rath
 Email: student74@nokta.com
 Password: Student123!
 Role: student
 
-Name: Vincenzo Grant
+Name: Trevor Kuvalis
 Email: student75@nokta.com
 Password: Student123!
 Role: student
 
-Name: Tonya Robel
+Name: Hettie Douglas
 Email: student76@nokta.com
 Password: Student123!
 Role: student
 
-Name: Kristoffer Zulauf
+Name: Leah Krajcik
 Email: student77@nokta.com
 Password: Student123!
 Role: student
 
-Name: Mia Weber
+Name: Krista Sporer
 Email: student78@nokta.com
 Password: Student123!
 Role: student
 
-Name: Sheila Grimes
+Name: Stephanie Kunde
 Email: student79@nokta.com
 Password: Student123!
 Role: student
 
-Name: Lee Kovacek
+Name: Jasper Rau
 Email: student80@nokta.com
 Password: Student123!
 Role: student
 
-Name: Dora Lakin
+Name: Darlene Hartmann
 Email: student81@nokta.com
 Password: Student123!
 Role: student
 
-Name: Joanne Brekke
+Name: Pearl Kreiger
 Email: student82@nokta.com
 Password: Student123!
 Role: student
 
-Name: Sophia Berge
+Name: Rhianna Batz
 Email: student83@nokta.com
 Password: Student123!
 Role: student
 
-Name: Sherwood Kuvalis
+Name: Andreane Kuhlman
 Email: student84@nokta.com
 Password: Student123!
 Role: student
 
-Name: Antonia Bednar
+Name: Darin Lind
 Email: student85@nokta.com
 Password: Student123!
 Role: student
 
-Name: Arthur Hodkiewicz
+Name: Lloyd Kihn
 Email: student86@nokta.com
 Password: Student123!
 Role: student
 
-Name: Nellie Yost
+Name: Kirsten McKenzie
 Email: student87@nokta.com
 Password: Student123!
 Role: student
 
-Name: Chanel Rempel
+Name: Aiden Green
 Email: student88@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ezra Lebsack
+Name: Margaret Herman
 Email: student89@nokta.com
 Password: Student123!
 Role: student
 
-Name: Karson O'Hara
+Name: Phillip Fahey
 Email: student90@nokta.com
 Password: Student123!
 Role: student
 
-Name: Zita Williamson
+Name: Jerome Quitzon
 Email: student91@nokta.com
 Password: Student123!
 Role: student
 
-Name: Herbert Strosin
+Name: Floyd Franecki-Shields
 Email: student92@nokta.com
 Password: Student123!
 Role: student
 
-Name: Darlene Balistreri
+Name: Rafael Conn
 Email: student93@nokta.com
 Password: Student123!
 Role: student
 
-Name: Elyssa Jacobson
+Name: Humberto Pouros
 Email: student94@nokta.com
 Password: Student123!
 Role: student
 
-Name: Fred Cronin
+Name: Tabitha Altenwerth
 Email: student95@nokta.com
 Password: Student123!
 Role: student
 
-Name: Lloyd Zieme
+Name: Hellen Bahringer
 Email: student96@nokta.com
 Password: Student123!
 Role: student
 
-Name: Israel Bednar
+Name: Wesley Kreiger
 Email: student97@nokta.com
 Password: Student123!
 Role: student
 
-Name: Jaylon Tillman
+Name: Johnny Luettgen
 Email: student98@nokta.com
 Password: Student123!
 Role: student
 
-Name: Ella Balistreri
+Name: Evan Wilderman
 Email: student99@nokta.com
 Password: Student123!
 Role: student
 
-Name: Korbin Bogan
+Name: Deven Johnson
 Email: student100@nokta.com
 Password: Student123!
 Role: student
 
 ## Family Students
-Name: Mrs. Kali Padberg
+> Login tip: On the login page select role **عضو خانواده** (maps to parent portal).
+> Email: family1@nokta.com — Password: Family123!
+Name: Guillermo Hettinger-Bayer
 Email: family1@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Dominic Kerluke
+Name: Miss Martha Beahan
 Email: family2@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Randal Mayert
+Name: Mr. Pansy Becker
 Email: family3@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Yesenia Franecki
+Name: Lance Leuschke
 Email: family4@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Melody Gutmann
+Name: Arnold Hackett PhD
 Email: family5@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mathew Raynor
+Name: Mamie Tillman
 Email: family6@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Santino Berge II
+Name: Joaquin Ullrich
 Email: family7@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mariane Hagenes-Kuhn
+Name: Sonya Adams
 Email: family8@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Chelsie Gulgowski
+Name: Eve Zieme
 Email: family9@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Stacy Schmeler
+Name: Consuelo Swift
 Email: family10@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Kellie Gislason
+Name: Jorge Ratke
 Email: family11@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Charlene Murazik
+Name: Trisha Hammes
 Email: family12@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Ignacio Wisozk
+Name: Gerry DuBuque
 Email: family13@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Katlynn Cronin
+Name: Alejandro McLaughlin II
 Email: family14@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Ewell Boehm
+Name: Carroll Glover
 Email: family15@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Miriam Conn
+Name: Celestine O'Reilly
 Email: family16@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Antwon Conn
+Name: Edmund Jacobi PhD
 Email: family17@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mollie Donnelly
+Name: Lindsey Roberts
 Email: family18@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Justyn Paucek
+Name: Lorene D'Amore III
 Email: family19@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Herminio Stanton
+Name: Darren Moen
 Email: family20@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Ernestine Bednar
+Name: Manuel Von
 Email: family21@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Elias Feest
+Name: Mr. Woodrow Prosacco
 Email: family22@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Cordie Balistreri
+Name: Mr. Mathew O'Reilly
 Email: family23@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Ronald Kerluke
+Name: Horace Parisian MD
 Email: family24@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Alysa Welch
+Name: Lula Adams
 Email: family25@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Miss Caterina Crona
+Name: Bobby Breitenberg
 Email: family26@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Luther Zboncak
+Name: Dr. Woodrow Mante
 Email: family27@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Burnice Little
+Name: Rod Carter
 Email: family28@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Gene Stracke
+Name: Jena Cummings
 Email: family29@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mariana Smith
+Name: Ms. Nadine Wiza
 Email: family30@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Alfredo Emmerich
+Name: Adrian Stehr
 Email: family31@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Miss Tyreek Feeney
+Name: Craig Sauer
 Email: family32@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Harriet O'Kon
+Name: April Kemmer-Lind V
 Email: family33@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Ernestine Senger
+Name: Pamela Kunde
 Email: family34@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mr. Percy Terry
+Name: Orville DuBuque
 Email: family35@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Jake Beer
+Name: Greta Brakus III
 Email: family36@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Zita Satterfield V
+Name: Angelina Cormier
 Email: family37@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Lucy Schuster
+Name: Joan Ortiz I
 Email: family38@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Shelia Johns
+Name: Kayla Willms
 Email: family39@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mr. Alan Koelpin
+Name: Henrietta Brakus
 Email: family40@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Laurel Kessler PhD
+Name: Lew Kertzmann
 Email: family41@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Tina Kirlin
+Name: Ms. Julie Marks
 Email: family42@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Dr. Wayne Hackett
+Name: Doris Kuphal
 Email: family43@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Lindsay Tromp
+Name: Kristin Kilback
 Email: family44@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Terence Schimmel
+Name: Jennings Crona
 Email: family45@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Mr. Walton Satterfield MD
+Name: Holly Torphy
 Email: family46@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Leslie Feest
+Name: Victor Kilback
 Email: family47@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Miss Abigale Luettgen
+Name: Jordane Boyle
 Email: family48@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Destiney Emard
+Name: Annette Friesen
 Email: family49@nokta.com
 Password: Family123!
 Role: family_student
 
-Name: Shirley Schulist
+Name: Vesta Pfeffer
 Email: family50@nokta.com
 Password: Family123!
 Role: family_student
 
 ## Accountants
-Name: Rick Daniel
+Name: Oscar Leffler
 Email: accountant1@nokta.com
 Password: Accountant123!
 Role: accountant
 
-Name: Travon Nitzsche
+Name: Terrance Carter
 Email: accountant2@nokta.com
 Password: Accountant123!
 Role: accountant
 
-Name: Laurence Toy
+Name: Cristina Strosin
 Email: accountant3@nokta.com
 Password: Accountant123!
 Role: accountant
 
-Name: Mr. Ross Lindgren III
+Name: Wilburn Schinner
 Email: accountant4@nokta.com
 Password: Accountant123!
 Role: accountant
 
-Name: Twila Johns
+Name: Francisco Herzog
 Email: accountant5@nokta.com
 Password: Accountant123!
 Role: accountant
 
 ## Librarians
-Name: Maggie Goyette PhD
+Name: Drew Moen
 Email: librarian1@nokta.com
 Password: Librarian123!
 Role: librarian
 
-Name: Hazle Reynolds
+Name: Dr. Erik Rath
 Email: librarian2@nokta.com
 Password: Librarian123!
 Role: librarian
 
-Name: Leticia Waelchi
+Name: Phoebe Jacobson
 Email: librarian3@nokta.com
 Password: Librarian123!
 Role: librarian
 
-Name: Abigale Schroeder
+Name: Levi Harvey
 Email: librarian4@nokta.com
 Password: Librarian123!
 Role: librarian
 
-Name: Mr. Sheldon Gleichner
+Name: Henry Klein
 Email: librarian5@nokta.com
 Password: Librarian123!
 Role: librarian

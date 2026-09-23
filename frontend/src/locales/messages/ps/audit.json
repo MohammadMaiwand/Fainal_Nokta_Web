@@ -2,5 +2,14 @@
   "actor": "کاروونکی",
   "action": "عمل",
   "target": "هدف",
-  "created_at": "نېټه"
+  "created_at": "نېټه",
+  "severity_info": "معلومات",
+  "severity_warning": "خبرداری",
+  "severity_critical": "بحراني",
+  "type_authentication": "هویت",
+  "type_finance": "مالي",
+  "type_attendance": "حاضري",
+  "type_rbac": "صلاحیتونه",
+  "type_reporting": "راپور",
+  "type_system": "سیستم"
 }
