@@ -187,3 +187,4 @@ See [`.gitignore`](.gitignore).
 - Backend won’t start → check MongoDB and `MONGO_URI`
 - Flutter production build fails at startup → use **HTTPS** `API_BASE_URL` with `APP_ENV=production`
 - PWA stale cache → unregister service worker in DevTools once
+# Fainal_Nokta_Web
